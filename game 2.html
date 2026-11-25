@@ -1,0 +1,4171 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Kẻ Thao Túng Tâm Lý</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ==========================================================================
+       1. DESIGN TOKENS — PHONG CÁCH ĐIỀU TRA AN NINH MẠNG, TƯƠNG PHẢN CAO WCAG
+       ========================================================================== */
+    :root {
+      --bg-surface: #FFFFFF;
+      --bg-subtle: #F8FAFC;
+      --bg-muted: #E2E8F0;
+      --bg-dark: #090E1A;
+      --bg-dark-mid: #111D35;
+      --bg-dark-elevated: #162238;
+
+      /* Độ tương phản chữ chuẩn WCAG AA/AAA */
+      --text-primary: #0F172A;      /* > 15:1 trên nền trắng */
+      --text-secondary: #334155;    /* > 10:1 trên nền trắng */
+      --text-inverse: #FFFFFF;
+      --text-inverse-sub: #E2E8F0;  /* > 12:1 trên nền tối */
+      --text-inverse-accent: #93C5FD;
+
+      --border-default: #CBD5E1;
+      --border-light: #E2E8F0;
+      --border-strong: #94A3B8;
+      --border-dark: #2A3A54;
+
+      --accent-blue: #1D4ED8;
+      --accent-blue-hover: #1E40AF;
+      --accent-blue-bg: #EFF6FF;
+      --accent-blue-border: #93C5FD;
+
+      --danger: #B91C1C;
+      --danger-hover: #991B1B;
+      --danger-bg: #FEF2F2;
+      --danger-border: #FCA5A5;
+
+      --success: #15803D;
+      --success-bg: #F0FDF4;
+      --success-border: #86EFAC;
+
+      --evidence: #78350F;          /* Nâu đậm tương phản cao trên vàng nhạt */
+      --evidence-border: #D97706;
+      --evidence-bg: #FEF3C7;
+
+      /* Bo góc gọn gàng, không lạm dụng */
+      --radius-xs: 2px;
+      --radius-sm: 4px;
+
+      /* Vùng chạm tiêu chuẩn */
+      --touch-min: 44px;
+
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    @media (max-width: 1023px) {
+      :root {
+        --touch-min: 48px; /* Vùng bấm mobile/tablet >= 48px */
+      }
+    }
+
+    /* ==========================================================================
+       2. RESET & BASE FULL-BLEED (100vw x 100dvh)
+       ========================================================================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      min-height: 100dvh;
+      overflow-x: hidden;
+      font-family: var(--font-sans);
+      font-size: 15px;
+      line-height: 1.5;
+      color: var(--text-primary);
+      background-color: var(--bg-subtle);
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button, input, select, textarea {
+      font-family: inherit;
+      font-size: 15px;
+      color: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      border: 1px solid transparent;
+      background: none;
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+      outline: 2px solid var(--accent-blue);
+      outline-offset: 2px;
+    }
+
+    button:disabled {
+      opacity: 0.48;
+      cursor: not-allowed;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+
+    /* ==========================================================================
+       3. NÚT BẤM & NHÃN CHUNG (PHẲNG, RÕ NÉT, VÙNG BẤM LỚN)
+       ========================================================================== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: var(--touch-min);
+      padding: 0 16px;
+      font-weight: 600;
+      font-size: 14px;
+      border-radius: var(--radius-sm);
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background-color: var(--accent-blue);
+      color: var(--text-inverse);
+      border-color: var(--accent-blue);
+    }
+    .btn-primary:hover:not(:disabled) {
+      background-color: var(--accent-blue-hover);
+      border-color: var(--accent-blue-hover);
+    }
+
+    .btn-danger {
+      background-color: var(--danger);
+      color: var(--text-inverse);
+      border-color: var(--danger);
+    }
+    .btn-danger:hover:not(:disabled) {
+      background-color: var(--danger-hover);
+      border-color: var(--danger-hover);
+    }
+
+    .btn-secondary {
+      background-color: var(--bg-surface);
+      color: var(--text-primary);
+      border-color: var(--border-strong);
+    }
+    .btn-secondary:hover:not(:disabled) {
+      background-color: var(--bg-subtle);
+      border-color: var(--text-primary);
+    }
+
+    .btn-full {
+      width: 100%;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: var(--radius-xs);
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    .badge-blue { background-color: var(--accent-blue-bg); color: var(--accent-blue); border-color: var(--accent-blue-border); }
+    .badge-green { background-color: var(--success-bg); color: var(--success); border-color: var(--success-border); }
+    .badge-red { background-color: var(--danger-bg); color: var(--danger); border-color: var(--danger-border); }
+    .badge-amber { background-color: var(--evidence-bg); color: var(--evidence); border-color: var(--evidence-border); }
+    .badge-neutral { background-color: var(--bg-muted); color: var(--text-primary); border-color: var(--border-default); }
+
+    /* ==========================================================================
+       4. MÀN HÌNH MỞ ĐẦU — CYBER-FORENSICS FULL-BLEED (100vw x 100dvh)
+       ========================================================================== */
+    #start-screen {
+      width: 100%;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      background-color: var(--bg-subtle);
+    }
+
+    /* Phần đầu: Nền tối sâu + lưới chiến thuật 32px + điểm sáng khí quyển dịu + radar SVG */
+    .start-hero {
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+      background-color: var(--bg-dark);
+      background-image:
+        radial-gradient(circle at 12% 20%, rgba(29, 78, 216, 0.24) 0%, transparent 46%),
+        radial-gradient(circle at 90% 82%, rgba(185, 28, 28, 0.16) 0%, transparent 44%),
+        linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+        linear-gradient(135deg, #090E1A 0%, #111D35 100%);
+      background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px, 100% 100%;
+      color: var(--text-inverse);
+      border-bottom: 1px solid var(--border-dark);
+      padding: calc(28px + env(safe-area-inset-top)) calc(28px + env(safe-area-inset-right)) 28px calc(28px + env(safe-area-inset-left));
+    }
+
+    .hero-radar-bg {
+      position: absolute;
+      right: -36px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 340px;
+      height: 340px;
+      pointer-events: none;
+      opacity: 0.45;
+      z-index: 0;
+    }
+
+    .start-hero-inner {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .start-hero-text {
+      max-width: 780px;
+    }
+
+    .start-kicker {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-inverse-accent);
+      margin-bottom: 8px;
+    }
+
+    .start-hero h1 {
+      font-size: clamp(24px, 3.2vw, 34px);
+      font-weight: 700;
+      line-height: 1.22;
+      margin-bottom: 10px;
+      color: #FFFFFF;
+      letter-spacing: -0.015em;
+    }
+
+    .start-hero p {
+      font-size: 15px;
+      line-height: 1.65;
+      color: #E2E8F0;
+    }
+
+    .start-hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .hero-stat-pill {
+      padding: 8px 12px;
+      background-color: rgba(15, 23, 42, 0.82);
+      border: 1px solid #334155;
+      border-radius: var(--radius-xs);
+      font-size: 13px;
+      color: #E2E8F0;
+    }
+    .hero-stat-pill strong {
+      color: #FFFFFF;
+    }
+
+    /* Phần thân tràn toàn màn hình, chia 2 vùng rõ ràng trên Desktop */
+    .start-main {
+      flex: 1;
+      width: 100%;
+      display: grid;
+      grid-template-columns: minmax(300px, 38%) 1fr;
+    }
+
+    /* Cột hướng dẫn: Nền xanh xám nhạt #EEF3F9 phủ lưới chấm kiến trúc 20px */
+    .start-col-guide {
+      background-color: #EEF3F9;
+      background-image: radial-gradient(rgba(30, 58, 138, 0.14) 1px, transparent 1px);
+      background-size: 20px 20px;
+      border-right: 1px solid var(--border-default);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Cột danh sách 5 hồ sơ: Nền sáng sạch #F8FAFC + lưới kỹ thuật mờ nhẹ */
+    .start-col-missions {
+      background-color: #F8FAFC;
+      background-image:
+        linear-gradient(rgba(100, 116, 139, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(100, 116, 139, 0.06) 1px, transparent 1px);
+      background-size: 28px 28px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .section-heading {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-secondary);
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-default);
+    }
+
+    .guide-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .guide-step {
+      padding: 14px 16px;
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-left: 3px solid var(--accent-blue);
+      border-radius: var(--radius-xs);
+    }
+
+    .guide-step h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .guide-step p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+
+    .mission-list {
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-xs);
+      background-color: var(--bg-surface);
+    }
+
+    .mission-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      width: 100%;
+      min-height: 68px;
+      padding: 14px 16px;
+      text-align: left;
+      background-color: var(--bg-surface);
+      border: none;
+      border-left: 4px solid transparent;
+      border-bottom: 1px solid var(--border-default);
+      border-radius: 0;
+    }
+    .mission-row:last-child {
+      border-bottom: none;
+    }
+
+    /* Viền trái nhấn màu theo độ khó khi hover */
+    .mission-row:hover {
+      background-color: var(--accent-blue-bg);
+      border-left-color: var(--accent-blue);
+    }
+    .mission-row[data-diff="easy"]:hover {
+      background-color: var(--success-bg);
+      border-left-color: var(--success);
+    }
+    .mission-row[data-diff="medium"]:hover {
+      background-color: var(--accent-blue-bg);
+      border-left-color: var(--accent-blue);
+    }
+    .mission-row[data-diff="hard"]:hover {
+      background-color: #FFFBEB;
+      border-left-color: var(--evidence-border);
+    }
+    .mission-row[data-diff="very-hard"]:hover {
+      background-color: var(--danger-bg);
+      border-left-color: var(--danger);
+    }
+
+    .mission-row-info {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .mission-row-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .mission-row-sub {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .mission-row-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    /* Thanh chân trang cố định */
+    .start-footer {
+      width: 100%;
+      background-color: var(--bg-surface);
+      border-top: 1px solid var(--border-default);
+      padding: 14px calc(24px + env(safe-area-inset-right)) calc(14px + env(safe-area-inset-bottom)) calc(24px + env(safe-area-inset-left));
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      position: sticky;
+      bottom: 0;
+      z-index: 10;
+    }
+
+    .start-footer-note {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    /* ==========================================================================
+       5. MÀN HÌNH CHƠI CHÍNH — FULL-BLEED 100vw x 100dvh
+       ========================================================================== */
+    #game-shell {
+      display: none;
+      flex-direction: column;
+      width: 100vw;
+      height: 100dvh;
+      overflow: hidden;
+      background-color: var(--bg-surface);
+    }
+
+    #game-shell.active {
+      display: flex;
+    }
+
+    /* Thanh HUD trên cùng: Nền tối sâu #0B1220 -> #152238 + vân lưới siêu mảnh */
+    .top-hud {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: calc(8px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) 8px calc(16px + env(safe-area-inset-left));
+      background-color: #0B1220;
+      background-image:
+        linear-gradient(rgba(148, 163, 184, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, #0B1220 0%, #152238 100%);
+      background-size: 24px 24px, 24px 24px, 100% 100%;
+      color: var(--text-inverse);
+      border-bottom: 1px solid var(--border-dark);
+      flex-shrink: 0;
+      min-height: 60px;
+    }
+
+    .hud-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-btn {
+      font-size: 15px;
+      font-weight: 700;
+      color: #FFFFFF;
+      min-height: var(--touch-min);
+      padding: 0 8px;
+      white-space: nowrap;
+      border-radius: var(--radius-xs);
+    }
+    .brand-btn:hover {
+      background-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .level-pill-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: var(--touch-min);
+      padding: 0 12px;
+      font-size: 13px;
+      font-weight: 600;
+      background-color: var(--bg-dark-elevated);
+      border: 1px solid #334155;
+      border-radius: var(--radius-sm);
+      color: #FFFFFF;
+      max-width: 280px;
+    }
+    .level-pill-btn span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .level-pill-btn:hover {
+      border-color: var(--text-inverse-accent);
+    }
+
+    .hud-stats {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .stat-box {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 38px;
+      padding: 4px 10px;
+      background-color: var(--bg-dark-elevated);
+      border: 1px solid #334155;
+      border-radius: var(--radius-xs);
+      font-size: 13px;
+    }
+
+    .stat-label {
+      color: #E2E8F0;
+      font-weight: 500;
+    }
+
+    .stat-val {
+      font-weight: 700;
+      color: #FFFFFF;
+      font-variant-numeric: tabular-nums;
+    }
+    .stat-val.safe { color: #86EFAC; }
+    .stat-val.warn { color: #FCD34D; }
+    .stat-val.danger { color: #FCA5A5; }
+
+    .hud-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .mobile-dossier-btn {
+      display: none;
+      background-color: var(--bg-dark-elevated);
+      color: #FFFFFF;
+      border-color: #475569;
+    }
+    .mobile-dossier-btn:hover {
+      border-color: var(--text-inverse-accent);
+    }
+
+    /* ==========================================================================
+       6. BỐ CỤC 2 CỘT SÁT MÉP (DESKTOP >= 1024px: 54% / 46%)
+       ========================================================================== */
+    .workspace {
+      flex: 1;
+      width: 100%;
+      display: flex;
+      min-height: 0;
+      overflow: hidden;
+      padding: 0;
+      margin: 0;
+    }
+
+    .app-column {
+      flex: 0 0 54%;
+      min-width: 440px;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 0;
+      background-color: var(--bg-surface);
+      border-right: 1px solid var(--border-default);
+    }
+
+    .device-statusbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 16px;
+      background-color: #EEF2F7;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-default);
+      font-size: 12px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    /* Thông báo đẩy */
+    .phone-toast {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 16px;
+      background-color: var(--accent-blue-bg);
+      color: var(--text-primary);
+      border-bottom: 1px solid var(--accent-blue-border);
+      font-size: 13px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .phone-toast.show {
+      display: flex;
+    }
+    .phone-toast-title {
+      font-weight: 700;
+      color: var(--accent-blue);
+      font-size: 12px;
+      margin-bottom: 2px;
+    }
+    .phone-toast-close {
+      color: var(--text-primary);
+      min-width: var(--touch-min);
+      min-height: var(--touch-min);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-xs);
+      border: 1px solid var(--accent-blue-border);
+      background-color: var(--bg-surface);
+      font-weight: 700;
+    }
+
+    .app-viewport {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+      background-color: var(--bg-subtle);
+    }
+
+    .app-screen {
+      display: none;
+      flex-direction: column;
+      height: 100%;
+      min-height: 0;
+    }
+    .app-screen.active {
+      display: flex;
+    }
+
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 16px;
+      background-color: var(--bg-surface);
+      border-bottom: 1px solid var(--border-default);
+      flex-shrink: 0;
+      min-height: 58px;
+    }
+
+    .app-header-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .avatar-box {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-sm);
+      background-color: var(--accent-blue);
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .app-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .app-subtitle {
+      font-size: 13px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Thanh Dock 4 ứng dụng (>= 62px) */
+    .phone-dock {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      background-color: var(--bg-surface);
+      border-top: 1px solid var(--border-default);
+      padding-bottom: env(safe-area-inset-bottom);
+      flex-shrink: 0;
+    }
+
+    .dock-btn {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      min-height: 62px;
+      padding: 8px 4px;
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 600;
+      border: none;
+      border-top: 3px solid transparent;
+      border-right: 1px solid var(--border-light);
+      border-radius: 0;
+    }
+    .dock-btn:last-child {
+      border-right: none;
+    }
+    .dock-btn:hover {
+      background-color: var(--bg-subtle);
+      color: var(--text-primary);
+    }
+    .dock-btn.active {
+      color: var(--accent-blue);
+      border-top-color: var(--accent-blue);
+      background-color: var(--accent-blue-bg);
+    }
+
+    .dock-badge {
+      position: absolute;
+      top: 6px;
+      right: calc(50% - 26px);
+      min-width: 20px;
+      height: 20px;
+      padding: 0 5px;
+      border-radius: var(--radius-xs);
+      background-color: var(--danger);
+      color: #FFFFFF;
+      font-size: 11px;
+      font-weight: 700;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .dock-badge.show {
+      display: inline-flex;
+    }
+    .dock-badge.evidence-count {
+      background-color: var(--evidence);
+    }
+
+    /* ==========================================================================
+       7. APP 1: TIN NHẮN (CHAT) — NỀN MẠNG LƯỚI HÌNH HỌC TINH TẾ
+       ========================================================================== */
+    .timeline-bar {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 16px;
+      background-color: var(--accent-blue-bg);
+      border-bottom: 1px solid var(--accent-blue-border);
+      font-size: 13px;
+      color: var(--text-primary);
+      flex-shrink: 0;
+    }
+    .timeline-bar.show {
+      display: flex;
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      background-color: #E8EFF7;
+      background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cg fill='none' stroke='%230F172A' stroke-opacity='0.06' stroke-width='1'%3E%3Cpath d='M0 32 L32 0 L64 32 L32 64 Z'/%3E%3Ccircle cx='32' cy='32' r='2' fill='%231D4ED8' fill-opacity='0.09' stroke='none'/%3E%3Ccircle cx='0' cy='0' r='1.5' fill='%230F172A' fill-opacity='0.08' stroke='none'/%3E%3Ccircle cx='64' cy='0' r='1.5' fill='%230F172A' fill-opacity='0.08' stroke='none'/%3E%3Ccircle cx='0' cy='64' r='1.5' fill='%230F172A' fill-opacity='0.08' stroke='none'/%3E%3Ccircle cx='64' cy='64' r='1.5' fill='%230F172A' fill-opacity='0.08' stroke='none'/%3E%3C/g%3E%3C/svg%3E"),
+        linear-gradient(180deg, #E8EFF7 0%, #F1F5F9 100%);
+      background-size: 64px 64px, 100% 100%;
+    }
+
+    .chat-divider {
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-primary);
+      padding: 6px 12px;
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-xs);
+      align-self: center;
+    }
+
+    .msg-row {
+      display: flex;
+      flex-direction: column;
+      max-width: 86%;
+      gap: 6px;
+    }
+    .msg-row.npc { align-self: flex-start; }
+    .msg-row.user { align-self: flex-end; align-items: flex-end; }
+
+    .msg-bubble {
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      line-height: 1.55;
+      word-wrap: break-word;
+      border: 1px solid var(--border-default);
+    }
+
+    .msg-row.npc .msg-bubble {
+      background-color: #FFFFFF;
+      color: #0F172A;
+      border-color: #CBD5E1;
+    }
+
+    .msg-row.npc.pinned .msg-bubble {
+      background-color: var(--evidence-bg);
+      border-color: var(--evidence-border);
+      color: #0F172A;
+    }
+
+    .msg-row.user .msg-bubble {
+      background-color: #1D4ED8;
+      color: #FFFFFF;
+      border-color: #1D4ED8;
+    }
+
+    .msg-meta-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .msg-time {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .pin-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: var(--touch-min);
+      padding: 0 12px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      color: var(--text-primary);
+    }
+    .pin-btn:hover {
+      border-color: var(--evidence-border);
+      color: var(--evidence);
+      background-color: var(--evidence-bg);
+    }
+    .pin-btn.pinned {
+      background-color: var(--evidence-bg);
+      border-color: var(--evidence-border);
+      color: var(--evidence);
+    }
+
+    .trap-box {
+      margin-top: 10px;
+      padding: 10px 12px;
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-xs);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .trap-url-text {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      color: var(--accent-blue);
+      word-break: break-all;
+      font-weight: 700;
+    }
+    .trap-action-btn {
+      min-height: var(--touch-min);
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      background-color: var(--accent-blue-bg);
+      color: var(--accent-blue);
+      border: 1px solid var(--accent-blue-border);
+      text-align: left;
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .trap-action-btn:hover {
+      background-color: #DBEAFE;
+    }
+    .trap-action-btn.safe-bait {
+      background-color: var(--success-bg);
+      color: var(--success);
+      border-color: var(--success-border);
+    }
+
+    .typing-row {
+      display: none;
+      padding: 8px 16px;
+      background-color: var(--bg-surface);
+      border-top: 1px solid var(--border-light);
+      font-size: 13px;
+      color: var(--text-secondary);
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .typing-row.show {
+      display: block;
+    }
+
+    .quick-prompts-bar {
+      padding: 8px 14px;
+      background-color: var(--bg-surface);
+      border-top: 1px solid var(--border-default);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .quick-prompts-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+
+    .quick-prompts-toggle {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent-blue);
+      padding: 0 12px;
+      min-height: var(--touch-min);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-xs);
+    }
+
+    .quick-prompts-list {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .quick-prompts-list.hidden {
+      display: none;
+    }
+
+    .prompt-chip {
+      flex-shrink: 0;
+      min-height: var(--touch-min);
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      max-width: 280px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .prompt-chip:hover {
+      background-color: var(--accent-blue-bg);
+      border-color: var(--accent-blue);
+      color: var(--accent-blue);
+    }
+
+    .chat-input-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background-color: var(--bg-surface);
+      border-top: 1px solid var(--border-default);
+      flex-shrink: 0;
+    }
+
+    .chat-input {
+      flex: 1;
+      min-height: var(--touch-min);
+      padding: 8px 12px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      background-color: var(--bg-surface);
+      color: var(--text-primary);
+      font-size: 15px;
+    }
+    .chat-input::placeholder {
+      color: var(--text-secondary);
+    }
+    .chat-input:focus {
+      border-color: var(--accent-blue);
+    }
+
+    /* ==========================================================================
+       8. APP 2: EMAIL (HỘP THƯ)
+       ========================================================================== */
+    .email-list {
+      flex: 1;
+      overflow-y: auto;
+      background-color: var(--bg-surface);
+    }
+
+    .email-item {
+      width: 100%;
+      min-height: 76px;
+      text-align: left;
+      padding: 14px 16px;
+      border: none;
+      border-bottom: 1px solid var(--border-default);
+      border-radius: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      background-color: var(--bg-surface);
+    }
+    .email-item:hover {
+      background-color: var(--bg-subtle);
+    }
+    .email-item.unread {
+      background-color: var(--accent-blue-bg);
+    }
+    .email-item.pinned-item {
+      border-left: 4px solid var(--evidence-border);
+    }
+
+    .email-item-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+    .email-sender { font-weight: 700; color: var(--text-primary); }
+    .email-time { font-size: 12px; color: var(--text-secondary); flex-shrink: 0; }
+    .email-subject { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+    .email-preview { font-size: 13px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .email-detail {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      overflow-y: auto;
+      background-color: var(--bg-surface);
+    }
+    .email-detail.active {
+      display: flex;
+    }
+
+    .email-detail-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border-default);
+      background-color: var(--bg-subtle);
+      flex-shrink: 0;
+    }
+
+    .email-detail-content {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .email-address-box {
+      padding: 12px;
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-xs);
+      font-size: 13px;
+      color: var(--text-primary);
+    }
+
+    .email-address-code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-weight: 700;
+      color: var(--text-primary);
+      word-break: break-all;
+    }
+
+    .email-body-text {
+      font-size: 14px;
+      line-height: 1.65;
+      color: var(--text-primary);
+      white-space: pre-line;
+    }
+
+    /* ==========================================================================
+       9. APP 3: NGÂN HÀNG SỐ (V-STUDENT BANK) — NỀN FINTECH SÂU SẮC NÉT
+       ========================================================================== */
+    .bank-scroll {
+      flex: 1;
+      overflow-y: auto;
+      background-color: var(--bg-surface);
+    }
+
+    .bank-account-panel {
+      background-color: #0B192C;
+      background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='60' viewBox='0 0 120 60'%3E%3Cpath d='M0 28 Q30 10 60 28 T120 28' fill='none' stroke='%2393C5FD' stroke-opacity='0.11' stroke-width='1'/%3E%3Cpath d='M0 46 Q30 28 60 46 T120 46' fill='none' stroke='%2334D399' stroke-opacity='0.10' stroke-width='1'/%3E%3C/svg%3E"),
+        linear-gradient(rgba(148, 163, 184, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.06) 1px, transparent 1px),
+        linear-gradient(135deg, #0B192C 0%, #102A43 52%, #0E3A40 100%);
+      background-size: 120px 60px, 24px 24px, 24px 24px, 100% 100%;
+      color: #FFFFFF;
+      padding: 20px 16px;
+      border-bottom: 1px solid #1E3A5F;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .bank-owner {
+      font-size: 12px;
+      color: #E2E8F0;
+      display: flex;
+      justify-content: space-between;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+
+    .bank-balance {
+      font-size: 28px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+      color: #FFFFFF;
+    }
+
+    .bank-section {
+      padding: 16px;
+      border-bottom: 1px solid var(--border-default);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background-color: var(--bg-surface);
+    }
+    .bank-section:last-child {
+      border-bottom: none;
+    }
+
+    .bank-section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .otp-display-box {
+      padding: 12px;
+      background-color: var(--danger-bg);
+      border: 1px solid var(--danger-border);
+      border-radius: var(--radius-xs);
+    }
+
+    .otp-code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      color: var(--danger);
+      margin: 6px 0;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .form-control {
+      min-height: var(--touch-min);
+      padding: 8px 12px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      background-color: var(--bg-surface);
+      color: var(--text-primary);
+      font-size: 14px;
+      width: 100%;
+    }
+
+    .tx-list {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .tx-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border-light);
+      font-size: 13px;
+    }
+    .tx-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .tx-title { font-weight: 700; color: var(--text-primary); }
+    .tx-sub { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+    .tx-amount { font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .tx-amount.plus { color: var(--success); }
+    .tx-amount.minus { color: var(--danger); }
+
+    /* ==========================================================================
+       10. APP 4: CỔNG BÁO CÁO AN NINH MẠNG (V-CYBERGUARD)
+       ========================================================================== */
+    .report-scroll {
+      flex: 1;
+      overflow-y: auto;
+      background-color: var(--bg-surface);
+    }
+
+    .report-block {
+      padding: 16px;
+      border-bottom: 1px solid var(--border-default);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .report-block:last-child {
+      border-bottom: none;
+    }
+
+    .progress-bar-track {
+      height: 10px;
+      background-color: var(--bg-muted);
+      border-radius: var(--radius-xs);
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background-color: var(--evidence-border);
+    }
+    .progress-bar-fill.ready {
+      background-color: var(--success);
+    }
+
+    .evidence-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .evidence-item {
+      background-color: var(--evidence-bg);
+      border: 1px solid var(--evidence-border);
+      border-radius: var(--radius-xs);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .evidence-item-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--evidence);
+    }
+
+    .evidence-item-text {
+      font-size: 13px;
+      color: var(--text-primary);
+      line-height: 1.5;
+    }
+
+    .unpin-btn {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--danger);
+      padding: 0 12px;
+      min-height: var(--touch-min);
+      border: 1px solid var(--danger-border);
+      background-color: var(--bg-surface);
+      border-radius: var(--radius-xs);
+    }
+    .unpin-btn:hover {
+      background-color: var(--danger-bg);
+    }
+
+    .empty-state {
+      padding: 16px;
+      text-align: center;
+      background-color: var(--bg-subtle);
+      border: 1px dashed var(--border-strong);
+      border-radius: var(--radius-xs);
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    /* ==========================================================================
+       11. CỘT PHẢI: BÀN HỒ SƠ ĐIỀU TRA VỤ ÁN (LƯỚI CHẤM 22px + KHỐI TRẮNG NÉT)
+       ========================================================================== */
+    .dossier-column {
+      flex: 1;
+      min-width: 320px;
+      display: flex;
+      flex-direction: column;
+      background-color: #EEF2F7;
+      background-image: radial-gradient(rgba(15, 23, 42, 0.13) 1px, transparent 1px);
+      background-size: 22px 22px;
+      height: 100%;
+      min-height: 0;
+    }
+
+    .dossier-header {
+      padding: 12px 18px;
+      background-color: var(--bg-surface);
+      border-bottom: 1px solid var(--border-default);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-shrink: 0;
+      min-height: 58px;
+    }
+
+    .dossier-header h2 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .drawer-close-btn {
+      display: none;
+    }
+
+    .dossier-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .dossier-section {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+    }
+
+    .dossier-section-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-light);
+      padding-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .case-brief-text {
+      font-size: 14px;
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+
+    .dossier-tip-box {
+      padding: 12px;
+      background-color: var(--bg-subtle);
+      border-left: 3px solid var(--accent-blue);
+      border-top: 1px solid var(--border-light);
+      border-right: 1px solid var(--border-light);
+      border-bottom: 1px solid var(--border-light);
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+
+    .dossier-prompt-btn {
+      width: 100%;
+      text-align: left;
+      padding: 10px 12px;
+      min-height: var(--touch-min);
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+      line-height: 1.45;
+    }
+    .dossier-prompt-btn:hover {
+      background-color: var(--accent-blue-bg);
+      border-color: var(--accent-blue);
+      color: var(--accent-blue);
+    }
+
+    .dossier-footer {
+      padding: 12px 18px calc(12px + env(safe-area-inset-bottom)) 18px;
+      border-top: 1px solid var(--border-default);
+      background-color: var(--bg-surface);
+      flex-shrink: 0;
+    }
+
+    /* ==========================================================================
+       12. MODALS PHẲNG (KHÔNG DÙNG ALERT/CONFIRM)
+       ========================================================================== */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background-color: rgba(9, 14, 26, 0.80);
+      padding: 16px;
+      align-items: center;
+      justify-content: center;
+      overflow-y: auto;
+    }
+    .modal-backdrop.show {
+      display: flex;
+    }
+
+    .modal-panel {
+      width: 100%;
+      max-width: 640px;
+      max-height: 90dvh;
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .modal-head {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-default);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background-color: var(--bg-subtle);
+    }
+    .modal-head.danger { background-color: var(--danger-bg); border-bottom-color: var(--danger-border); }
+    .modal-head.success { background-color: var(--success-bg); border-bottom-color: var(--success-border); }
+    .modal-head.warn { background-color: var(--evidence-bg); border-bottom-color: var(--evidence-border); }
+
+    .modal-head h2 {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .modal-head.danger h2 { color: var(--danger); }
+    .modal-head.success h2 { color: var(--success); }
+    .modal-head.warn h2 { color: var(--evidence); }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text-primary);
+    }
+
+    .analysis-block {
+      padding: 14px;
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-xs);
+    }
+
+    .analysis-block h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .analysis-list {
+      padding-left: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      color: var(--text-secondary);
+    }
+
+    .modal-foot {
+      padding: 14px 20px;
+      background-color: var(--bg-subtle);
+      border-top: 1px solid var(--border-default);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .score-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background-color: var(--accent-blue-bg);
+      border: 1px solid var(--accent-blue-border);
+      border-radius: var(--radius-xs);
+    }
+
+    .score-big {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--accent-blue);
+    }
+
+    /* ==========================================================================
+       13. RESPONSIVE BREAKPOINTS (TABLET & MOBILE FULL-BLEED)
+       ========================================================================== */
+    @media (max-width: 1023px) {
+      .start-main {
+        grid-template-columns: 1fr;
+      }
+
+      .start-col-guide {
+        border-right: none;
+        border-bottom: 1px solid var(--border-default);
+        padding: 18px 16px;
+      }
+
+      .start-col-missions {
+        padding: 18px 16px;
+      }
+
+      .app-column {
+        flex: 1 1 100%;
+        min-width: 0;
+        width: 100%;
+        border-right: none;
+      }
+
+      .desktop-only {
+        display: none !important;
+      }
+
+      .mobile-dossier-btn {
+        display: inline-flex;
+      }
+
+      .dossier-column {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 80;
+        width: 100vw;
+        height: 100dvh;
+        min-width: 0;
+      }
+
+      .dossier-column.mobile-open {
+        display: flex;
+      }
+
+      .dossier-header {
+        padding-top: calc(12px + env(safe-area-inset-top));
+      }
+
+      .drawer-close-btn {
+        display: inline-flex;
+      }
+
+      .top-hud {
+        padding: calc(6px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-right)) 6px calc(10px + env(safe-area-inset-left));
+        gap: 6px;
+        min-height: 58px;
+      }
+
+      .brand-btn {
+        display: none;
+      }
+
+      .stat-label {
+        display: none;
+      }
+
+      .stat-box {
+        padding: 4px 8px;
+        font-size: 12px;
+      }
+
+      .level-pill-btn {
+        max-width: 145px;
+        font-size: 13px;
+        padding: 0 10px;
+      }
+
+      .dock-btn {
+        min-height: 64px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .start-hero {
+        padding: calc(20px + env(safe-area-inset-top)) 16px 20px 16px;
+      }
+      .hero-radar-bg {
+        width: 220px;
+        height: 220px;
+        right: -50px;
+        opacity: 0.30;
+      }
+      .start-footer {
+        padding: 12px 16px calc(12px + env(safe-area-inset-bottom)) 16px;
+      }
+      .start-footer .btn {
+        width: 100%;
+      }
+      .mission-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .mission-row-meta {
+        width: 100%;
+        justify-content: space-between;
+      }
+      .msg-row {
+        max-width: 94%;
+      }
+      .modal-backdrop {
+        padding: 8px;
+      }
+      .modal-foot .btn {
+        flex: 1 1 auto;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- =========================================================================
+       1. MÀN HÌNH MỞ ĐẦU TRÀN MÀN HÌNH (FULL-BLEED)
+       ========================================================================= -->
+  <main id="start-screen">
+    <header class="start-hero">
+      <!-- Họa tiết radar / vân số điều tra mờ nhẹ làm chiều sâu nền -->
+      <svg class="hero-radar-bg" viewBox="0 0 320 320" fill="none" aria-hidden="true">
+        <circle cx="160" cy="160" r="148" stroke="#93C5FD" stroke-opacity="0.18" stroke-width="1" stroke-dasharray="4 6"/>
+        <circle cx="160" cy="160" r="112" stroke="#93C5FD" stroke-opacity="0.22" stroke-width="1"/>
+        <circle cx="160" cy="160" r="74" stroke="#93C5FD" stroke-opacity="0.25" stroke-width="1" stroke-dasharray="2 4"/>
+        <circle cx="160" cy="160" r="36" stroke="#FCA5A5" stroke-opacity="0.30" stroke-width="1"/>
+        <line x1="160" y1="8" x2="160" y2="312" stroke="#93C5FD" stroke-opacity="0.14" stroke-width="1"/>
+        <line x1="8" y1="160" x2="312" y2="160" stroke="#93C5FD" stroke-opacity="0.14" stroke-width="1"/>
+        <circle cx="212" cy="108" r="4" fill="#FCA5A5" fill-opacity="0.55"/>
+        <circle cx="116" cy="204" r="3" fill="#93C5FD" fill-opacity="0.55"/>
+      </svg>
+
+      <div class="start-hero-inner">
+        <div class="start-hero-text">
+          <span class="start-kicker">Game Giáo Dục An Ninh Mạng &bull; Điều Tra Chống Lừa Đảo Trực Tuyến</span>
+          <h1>Kẻ Thao Túng Tâm Lý</h1>
+          <p>
+            Bạn vào vai <strong>Trần Viết Thiện</strong> — sinh viên năm hai vừa mở tài khoản ngân hàng (4.500.000 VNĐ) và đang tìm việc làm thêm online. Năm đối tượng lừa đảo do <strong>Gemini AI</strong> nhập vai sẽ tiếp cận và thao túng tâm lý bạn. Hãy đặt bất kỳ câu hỏi vặn vẹo nào để tìm sơ hở, ghim đủ bằng chứng và tố giác kịp thời.
+          </p>
+        </div>
+        <div class="start-hero-meta">
+          <div class="hero-stat-pill">Số dư khởi đầu: <strong>4.500.000 VNĐ</strong></div>
+          <div class="hero-stat-pill">Điểm An toàn: <strong>100/100</strong></div>
+          <div class="hero-stat-pill">Nhân vật phản diện: <strong>Gemini AI</strong></div>
+        </div>
+      </div>
+    </header>
+
+    <div class="start-main">
+      <!-- Cột Hướng dẫn 3 bước -->
+      <section class="start-col-guide" aria-label="Hướng dẫn cách chơi">
+        <h2 class="section-heading">Quy trình điều tra 3 bước</h2>
+        <div class="guide-steps">
+          <div class="guide-step">
+            <h3>Bước 1. Kiểm tra &amp; Hỏi vặn tự do</h3>
+            <p>Đọc kỹ tin nhắn, đối chiếu địa chỉ tên miền trong <strong>Email</strong> và kiểm tra <strong>Ngân hàng số</strong>. Bạn có thể gõ bất kỳ câu hỏi vặn vẹo, thử lòng hay chất vấn pháp lý nào — nhân vật phản diện AI sẽ ứng biến trực tiếp và dần để lộ sơ hở.</p>
+          </div>
+          <div class="guide-step">
+            <h3>Bước 2. Ghim tối thiểu 3 bằng chứng</h3>
+            <p>Bấm nút <strong>Ghim bằng chứng</strong> ở những tin nhắn hoặc Email có dấu hiệu gian dối (đường link đuôi lạ, đòi mã OTP, ép chuyển tiền vào STK cá nhân, đe dọa phi pháp lý...).</p>
+          </div>
+          <div class="guide-step">
+            <h3>Bước 3. Nộp báo cáo &amp; Tránh sập bẫy</h3>
+            <p>Vào cổng <strong>V-CyberGuard</strong> để AI Trọng tài thẩm định và chấm điểm. Tuyệt đối không bấm link độc hại, không gửi mã OTP hay chuyển khoản cho kẻ gian.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Cột Danh sách 5 hồ sơ màn chơi -->
+      <section class="start-col-missions" aria-label="Danh sách 5 hồ sơ màn chơi">
+        <h2 class="section-heading">Danh sách 5 hồ sơ tình huống (Độ khó tăng dần)</h2>
+        <div class="mission-list" id="start-mission-list">
+          <!-- Render bằng JavaScript -->
+        </div>
+      </section>
+    </div>
+
+    <footer class="start-footer">
+      <div class="start-footer-note">
+        Tiến độ phá án được lưu tự động trên thiết bị này.
+      </div>
+      <button type="button" class="btn btn-primary" id="btn-start-journey">
+        Bắt đầu hành trình (Màn 1)
+      </button>
+    </footer>
+  </main>
+
+  <!-- =========================================================================
+       2. GIAO DIỆN CHƠI CHÍNH TRÀN TOÀN MÀN HÌNH (100vw x 100dvh)
+       ========================================================================= -->
+  <div id="game-shell">
+    <!-- Thanh HUD trên cùng -->
+    <header class="top-hud">
+      <div class="hud-left">
+        <button type="button" class="brand-btn" id="btn-back-home" title="Về màn hình chính">
+          Kẻ Thao Túng Tâm Lý
+        </button>
+        <button type="button" class="level-pill-btn" id="btn-open-missions" title="Chọn màn chơi">
+          <span id="hud-level-text">Màn 1/5</span>
+        </button>
+      </div>
+
+      <div class="hud-stats">
+        <div class="stat-box" title="Điểm An toàn hiện tại">
+          <span class="stat-label">An toàn:</span>
+          <span class="stat-val safe" id="hud-safety">100/100</span>
+        </div>
+        <div class="stat-box" title="Số dư V-Student Bank">
+          <span class="stat-label">Số dư:</span>
+          <span class="stat-val" id="hud-balance">4.500.000đ</span>
+        </div>
+      </div>
+
+      <div class="hud-actions">
+        <button type="button" class="btn mobile-dossier-btn" id="btn-mobile-dossier">
+          Hồ sơ (<span id="mobile-ev-count">0</span>/3)
+        </button>
+        <button type="button" class="btn btn-danger desktop-only" id="btn-top-report">
+          Báo cáo &amp; Chặn (<span id="desktop-ev-count">0</span>/3)
+        </button>
+      </div>
+    </header>
+
+    <!-- Không gian làm việc 2 cột sát mép (Desktop) / Toàn màn hình (Mobile) -->
+    <div class="workspace">
+      <!-- CỘT TRÁI: KHÔNG GIAN 4 ỨNG DỤNG -->
+      <section class="app-column" aria-label="Các ứng dụng trên thiết bị của Trần Viết Thiện">
+        <div class="device-statusbar">
+          <span>Thiết bị của Trần Viết Thiện &bull; <span id="phone-clock">09:41</span></span>
+          <span>5G &bull; Pin 88%</span>
+        </div>
+
+        <!-- Thông báo đẩy -->
+        <div class="phone-toast" id="phone-toast" role="status" aria-live="polite">
+          <div id="phone-toast-body">
+            <div class="phone-toast-title" id="phone-toast-title">Thông báo</div>
+            <div id="phone-toast-msg">Bạn có tin nhắn mới</div>
+          </div>
+          <button type="button" class="phone-toast-close" id="phone-toast-close" aria-label="Đóng thông báo">✕</button>
+        </div>
+
+        <!-- Khung hiển thị 4 Ứng dụng -->
+        <div class="app-viewport">
+
+          <!-- ỨNG DỤNG 1: TIN NHẮN (CHAT) -->
+          <div class="app-screen active" id="app-chat">
+            <div class="app-header">
+              <div class="app-header-info">
+                <div class="avatar-box" id="chat-avatar">SV</div>
+                <div style="min-width: 0;">
+                  <div class="app-title" id="chat-npc-name">ShopeeVIP Tri Ân</div>
+                  <div class="app-subtitle" id="chat-npc-role">Tài khoản lạ &bull; Đang hoạt động</div>
+                </div>
+              </div>
+              <span class="badge badge-blue" id="ai-mode-badge">Gemini AI</span>
+            </div>
+
+            <!-- Thanh chuyển ngày riêng cho Màn 4 (Pig Butchering) -->
+            <div class="timeline-bar" id="lv4-timeline-bar">
+              <span id="lv4-day-label"><strong>Ngày 1</strong> — Mới kết bạn làm quen</span>
+              <button type="button" class="btn btn-primary" id="btn-lv4-next-day">
+                Qua Ngày 5 →
+              </button>
+            </div>
+
+            <!-- Khung hội thoại -->
+            <div class="chat-messages" id="chat-messages" role="log" aria-live="polite">
+              <!-- Tin nhắn render tại đây -->
+            </div>
+
+            <div class="typing-row" id="chat-typing">Đối phương đang nhập tin nhắn...</div>
+
+            <!-- Gợi ý câu hỏi nhanh -->
+            <div class="quick-prompts-bar">
+              <div class="quick-prompts-header">
+                <span>Gợi ý câu hỏi nhanh (hoặc tự gõ câu hỏi bất kỳ bên dưới):</span>
+                <button type="button" class="quick-prompts-toggle" id="btn-toggle-prompts">Ẩn</button>
+              </div>
+              <div class="quick-prompts-list" id="chat-quick-prompts">
+                <!-- Render bằng JS -->
+              </div>
+            </div>
+
+            <!-- Khung nhập tin nhắn tự do -->
+            <form class="chat-input-bar" id="chat-form">
+              <label for="chat-input" class="sr-only">Nhập câu hỏi bất kỳ gửi đối phương</label>
+              <input type="text" id="chat-input" class="chat-input" placeholder="Nhập câu hỏi bất kỳ để chất vấn đối phương..." autocomplete="off" maxlength="360">
+              <button type="submit" class="btn btn-primary" id="chat-send-btn">Gửi</button>
+            </form>
+          </div>
+
+          <!-- ỨNG DỤNG 2: EMAIL (HỘP THƯ) -->
+          <div class="app-screen" id="app-email">
+            <div class="app-header">
+              <div class="app-header-info">
+                <div class="avatar-box" style="background-color: #0F172A;">@</div>
+                <div>
+                  <div class="app-title">Hộp thư đến (Mail)</div>
+                  <div class="app-subtitle">thien.sv2026@gmail.com</div>
+                </div>
+              </div>
+              <span class="badge badge-blue" id="email-count-badge">1 thư</span>
+            </div>
+
+            <div class="email-list" id="email-list">
+              <!-- Render bằng JS -->
+            </div>
+
+            <div class="email-detail" id="email-detail">
+              <div class="email-detail-bar">
+                <button type="button" class="btn btn-secondary" id="btn-email-back">← Quay lại</button>
+                <button type="button" class="btn btn-secondary" id="btn-email-pin">☆ Ghim bằng chứng</button>
+              </div>
+              <div class="email-detail-content" id="email-detail-content">
+                <!-- Render bằng JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- ỨNG DỤNG 3: NGÂN HÀNG SỐ (V-STUDENT BANK) -->
+          <div class="app-screen" id="app-bank">
+            <div class="app-header">
+              <div class="app-header-info">
+                <div class="avatar-box" style="background-color: #15803D;">VB</div>
+                <div>
+                  <div class="app-title">V-Student Bank</div>
+                  <div class="app-subtitle">Ngân hàng số sinh viên</div>
+                </div>
+              </div>
+              <span class="badge badge-green">Đang bảo vệ</span>
+            </div>
+
+            <div class="bank-scroll">
+              <div class="bank-account-panel">
+                <div class="bank-owner">
+                  <span>TRẦN VIẾT THIỆN</span>
+                  <span>STK: 0981 2026 88</span>
+                </div>
+                <div class="bank-balance" id="bank-balance-display">4.500.000 VNĐ</div>
+                <div style="font-size: 12px; color: #E2E8F0;">Tài khoản thanh toán chính chủ</div>
+              </div>
+
+              <!-- Khu vực Smart OTP -->
+              <div class="bank-section" id="bank-otp-section">
+                <div class="bank-section-title">
+                  <span>Mã xác thực Smart OTP</span>
+                  <span class="badge badge-green" id="bank-otp-status">An toàn</span>
+                </div>
+                <div id="bank-otp-content" style="font-size: 13px; color: var(--text-secondary);">
+                  Chưa có giao dịch yêu cầu mã OTP. Tuyệt đối không cung cấp mã OTP cho bất kỳ ai.
+                </div>
+              </div>
+
+              <!-- Form chuyển khoản (cơ chế bẫy thực tế) -->
+              <div class="bank-section">
+                <div class="bank-section-title">
+                  <span>Chuyển tiền nhanh 24/7</span>
+                </div>
+                <form id="bank-transfer-form" style="display: flex; flex-direction: column; gap: 12px;">
+                  <div class="form-group">
+                    <label class="form-label" for="transfer-recipient">Tài khoản thụ hưởng</label>
+                    <select id="transfer-recipient" class="form-control">
+                      <!-- Render bằng JS -->
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="transfer-amount">Số tiền chuyển (VNĐ)</label>
+                    <input type="number" id="transfer-amount" class="form-control" placeholder="Nhập số tiền..." min="10000" step="10000">
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-full" id="btn-bank-transfer">
+                    Thực hiện chuyển khoản
+                  </button>
+                </form>
+              </div>
+
+              <!-- Lịch sử giao dịch -->
+              <div class="bank-section">
+                <div class="bank-section-title">Lịch sử giao dịch gần đây</div>
+                <div class="tx-list" id="bank-tx-list">
+                  <!-- Render bằng JS -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ỨNG DỤNG 4: CỔNG BÁO CÁO AN NINH MẠNG (V-CYBERGUARD) -->
+          <div class="app-screen" id="app-report">
+            <div class="app-header">
+              <div class="app-header-info">
+                <div class="avatar-box" style="background-color: #B91C1C;">CG</div>
+                <div>
+                  <div class="app-title">V-CyberGuard</div>
+                  <div class="app-subtitle">Cổng tố giác &amp; AI Trọng tài</div>
+                </div>
+              </div>
+              <span class="badge badge-amber" id="report-count-badge">0/3</span>
+            </div>
+
+            <div class="report-scroll">
+              <div class="report-block">
+                <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 700;">
+                  <span>Tiến độ thu thập bằng chứng</span>
+                  <span id="report-progress-text">0 / 3 bằng chứng tối thiểu</span>
+                </div>
+                <div class="progress-bar-track">
+                  <div class="progress-bar-fill" id="report-progress-fill" style="width: 0%;"></div>
+                </div>
+                <p style="font-size: 13px; color: var(--text-secondary);">
+                  Ghim ít nhất 3 tin nhắn hoặc Email chứa dấu hiệu lừa đảo rõ ràng trước khi nộp cho AI Trọng tài thẩm định.
+                </p>
+              </div>
+
+              <div class="report-block">
+                <div style="font-size: 13px; font-weight: 700; color: var(--text-primary);">Danh sách bằng chứng đã ghim:</div>
+                <div class="evidence-list" id="report-evidence-list">
+                  <!-- Render bằng JS -->
+                </div>
+              </div>
+
+              <div class="report-block">
+                <div class="form-group">
+                  <label class="form-label" for="report-category">Phân loại thủ đoạn lừa đảo:</label>
+                  <select id="report-category" class="form-control">
+                    <option value="">-- Chọn loại hình lừa đảo nghi vấn --</option>
+                    <option value="prize">Giả danh trúng thưởng / Quà tặng qua link lạ</option>
+                    <option value="job">Tuyển dụng CTV chốt đơn / Việc nhẹ lương cao</option>
+                    <option value="bank">Giả danh ngân hàng / Đánh cắp mã OTP</option>
+                    <option value="romance">Lừa đảo tình cảm &amp; Dụ đầu tư (Pig Butchering)</option>
+                    <option value="police">Giả danh Công an / Viện kiểm sát đe dọa chuyển tiền</option>
+                  </select>
+                </div>
+
+                <div id="report-validation-msg" style="display:none; font-size: 13px; color: var(--danger); font-weight: 700;"></div>
+
+                <button type="button" class="btn btn-danger btn-full" id="btn-submit-report" disabled>
+                  Báo cáo &amp; Chặn đối tượng
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Thanh Dock 4 ứng dụng -->
+        <nav class="phone-dock" aria-label="Điều hướng 4 ứng dụng">
+          <button type="button" class="dock-btn active" data-app="chat" id="dock-chat">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span>Tin nhắn</span>
+            <span class="dock-badge" id="badge-chat">0</span>
+          </button>
+
+          <button type="button" class="dock-btn" data-app="email" id="dock-email">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            <span>Email</span>
+            <span class="dock-badge" id="badge-email">1</span>
+          </button>
+
+          <button type="button" class="dock-btn" data-app="bank" id="dock-bank">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+            <span>Ngân hàng</span>
+            <span class="dock-badge" id="badge-bank">0</span>
+          </button>
+
+          <button type="button" class="dock-btn" data-app="report" id="dock-report">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span>Báo cáo</span>
+            <span class="dock-badge evidence-count" id="badge-report">0</span>
+          </button>
+        </nav>
+      </section>
+
+      <!-- CỘT PHẢI: BÀN HỒ SƠ ĐIỀU TRA VỤ ÁN (DESKTOP) / FULLSCREEN DRAWER (MOBILE) -->
+      <aside class="dossier-column" id="dossier-panel" aria-label="Hồ sơ điều tra vụ án">
+        <div class="dossier-header">
+          <div>
+            <h2>Hồ Sơ Điều Tra Vụ Án</h2>
+            <div style="font-size: 13px; color: var(--text-secondary);" id="dossier-level-subtitle">Màn 1 — Độ khó: Dễ</div>
+          </div>
+          <button type="button" class="btn btn-secondary drawer-close-btn" id="btn-close-drawer">Đóng ✕</button>
+        </div>
+
+        <div class="dossier-body">
+          <div class="dossier-section">
+            <div class="dossier-section-title">
+              <span>Tóm tắt tình huống</span>
+              <span class="badge badge-green" id="dossier-diff-badge">Dễ</span>
+            </div>
+            <p class="case-brief-text" id="dossier-briefing"></p>
+            <div class="dossier-tip-box" id="dossier-tip"></div>
+          </div>
+
+          <div class="dossier-section">
+            <div class="dossier-section-title">
+              <span>Gợi ý câu hỏi chất vấn (Bấm để điền)</span>
+            </div>
+            <div id="dossier-prompts-list" style="display: flex; flex-direction: column; gap: 8px;">
+              <!-- Render bằng JS -->
+            </div>
+          </div>
+
+          <div class="dossier-section">
+            <div class="dossier-section-title">
+              <span>Túi bằng chứng đã ghim</span>
+              <span class="badge badge-amber" id="dossier-ev-badge">0 / 3 tối thiểu</span>
+            </div>
+            <div class="evidence-list" id="dossier-evidence-list">
+              <!-- Render bằng JS -->
+            </div>
+          </div>
+        </div>
+
+        <div class="dossier-footer">
+          <button type="button" class="btn btn-danger btn-full" id="btn-dossier-goto-report">
+            Mở Cổng Báo Cáo &amp; Chặn
+          </button>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       3. CÁC MODAL PHẢN HỒI (KHÔNG DÙNG ALERT/CONFIRM)
+       ========================================================================= -->
+
+  <!-- Modal Game Over -->
+  <div class="modal-backdrop" id="gameover-modal" role="dialog" aria-modal="true" aria-labelledby="gameover-title">
+    <div class="modal-panel">
+      <div class="modal-head danger">
+        <h2 id="gameover-title">Cảnh báo: Bạn đã mắc bẫy lừa đảo!</h2>
+        <span class="badge badge-red">An toàn: 0/100</span>
+      </div>
+      <div class="modal-body">
+        <p id="gameover-reason" style="font-weight: 700; color: var(--text-primary);"></p>
+        <div class="analysis-block">
+          <h3>Hậu quả giả lập &amp; Bài học thực tế</h3>
+          <p id="gameover-lesson" style="color: var(--text-secondary);"></p>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-secondary" id="btn-gameover-menu">Chọn màn khác</button>
+        <button type="button" class="btn btn-danger" id="btn-gameover-retry">Chơi lại màn này</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Từ chối báo cáo -->
+  <div class="modal-backdrop" id="reject-modal" role="dialog" aria-modal="true" aria-labelledby="reject-title">
+    <div class="modal-panel">
+      <div class="modal-head warn">
+        <h2 id="reject-title">Bằng chứng chưa đủ căn cứ kết luận</h2>
+        <span class="badge badge-amber">-20 Điểm An toàn</span>
+      </div>
+      <div class="modal-body">
+        <p id="reject-feedback"></p>
+        <div class="analysis-block">
+          <h3>Gợi ý từ AI Trọng tài</h3>
+          <p style="color: var(--text-secondary);">
+            Hãy bỏ ghim những câu chào hỏi thông thường, tiếp tục hỏi vặn đối phương để bộc lộ sơ hở cụ thể (link đuôi lạ, STK cá nhân, đòi OTP, đe dọa phi pháp lý) và kiểm tra thêm hộp thư <strong>Email</strong>.
+          </p>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-primary" id="btn-reject-continue">Tiếp tục điều tra</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Chiến thắng & Hồ sơ Phân tích Tâm lý Tội phạm -->
+  <div class="modal-backdrop" id="victory-modal" role="dialog" aria-modal="true" aria-labelledby="victory-title">
+    <div class="modal-panel">
+      <div class="modal-head success">
+        <h2 id="victory-title">Báo cáo thành công &amp; Đã chặn kẻ gian!</h2>
+        <span class="badge badge-green">Vượt màn</span>
+      </div>
+      <div class="modal-body">
+        <div class="score-banner">
+          <div>
+            <div style="font-size: 12px; font-weight: 700; color: var(--accent-blue); text-transform: uppercase;">Chấm điểm từ AI Trọng tài</div>
+            <div style="font-size: 13px; color: var(--text-secondary);">Chất lượng hồ sơ bằng chứng điều tra</div>
+          </div>
+          <div class="score-big" id="victory-score">90/100</div>
+        </div>
+
+        <div class="analysis-block">
+          <h3>Nhận xét về bộ bằng chứng của bạn</h3>
+          <p id="victory-ai-feedback" style="color: var(--text-secondary);"></p>
+        </div>
+
+        <div class="analysis-block">
+          <h3>Hồ sơ phân tích tâm lý tội phạm: <span id="victory-psych-tag" style="color: var(--danger);"></span></h3>
+          <p id="victory-psych-desc" style="color: var(--text-secondary); margin-bottom: 10px;"></p>
+          <h3 style="margin-top: 8px;">Dấu hiệu nhận biết ngoài đời thực</h3>
+          <ul class="analysis-list" id="victory-signs-list"></ul>
+          <h3 style="margin-top: 10px;">Nguyên tắc phòng tránh</h3>
+          <ul class="analysis-list" id="victory-tips-list"></ul>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-secondary" id="btn-victory-menu">Danh sách màn</button>
+        <button type="button" class="btn btn-primary" id="btn-victory-next">Chuyển sang màn tiếp theo →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Chọn màn chơi nhanh -->
+  <div class="modal-backdrop" id="mission-modal" role="dialog" aria-modal="true" aria-labelledby="mission-modal-title">
+    <div class="modal-panel">
+      <div class="modal-head">
+        <h2 id="mission-modal-title">Chọn hồ sơ màn chơi</h2>
+        <button type="button" class="btn btn-secondary" id="btn-close-mission-modal">Đóng ✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="mission-list" id="modal-mission-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       4. JAVASCRIPT LOGIC — GEMINI AI (NHÂN VẬT PHẢN DIỆN & TRỌNG TÀI) + FALLBACK
+       ========================================================================= -->
+  <script>
+    (function () {
+      'use strict';
+
+      /* =======================================================================
+         CẤU HÌNH GEMINI API (MẶC ĐỊNH CANVAS RUNTIME + EXPONENTIAL BACKOFF)
+         ======================================================================= */
+      const GEMINI_API_KEY = ""; // Runtime tự động cung cấp khóa khi để chuỗi rỗng
+      const GEMINI_MODEL = "gemini-3-flash-preview";
+      const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+
+      /**
+       * Gọi Gemini API kèm cơ chế thử lại cấp số nhân (1s, 2s, 4s) và timeout.
+       * Không ghi log lỗi retry ra console; trả về null để chuyển sang fallback mượt mà.
+       */
+      async function callGeminiAPI(payload, maxRetries = 2) {
+        const delays = [1000, 2000, 4000];
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 12000);
+          try {
+            const response = await fetch(GEMINI_ENDPOINT, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+              signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+              if (attempt < maxRetries && (response.status === 429 || response.status >= 500)) {
+                await new Promise(res => setTimeout(res, delays[attempt] || 2000));
+                continue;
+              }
+              return null;
+            }
+
+            const data = await response.json();
+            const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text) return text;
+            return null;
+          } catch (_err) {
+            clearTimeout(timeoutId);
+            if (attempt < maxRetries) {
+              await new Promise(res => setTimeout(res, delays[attempt] || 2000));
+              continue;
+            }
+            return null;
+          }
+        }
+        return null;
+      }
+
+      /* =======================================================================
+         QUY TẮC ỨNG BIẾN CHUNG CHO CẢ 5 NHÂN VẬT PHẢN DIỆN GEMINI AI
+         ======================================================================= */
+      const COMMON_VILLAIN_RULES = `
+QUY TẮC NHẬP VAI BẮT BUỘC (KHÔNG ĐƯỢC PHÁ VỠ):
+1. Xử lý MỌI câu hỏi bất kỳ của người chơi (dù là hỏi vặn pháp lý, hỏi kỹ thuật, hỏi thông tin cá nhân, hỏi lạc đề/chuyện phiếm như thời tiết/toán học/ăn uống, thử xem bạn có phải AI không, hay từ chối/chửi mắng):
+   - LUÔN phản hồi trực tiếp, hợp lý và tự nhiên với câu hỏi đó trong 1 câu đầu (không lảng tránh máy móc), sau đó khéo léo lái câu chuyện quay lại đúng mục tiêu lừa đảo của nhân vật.
+   - Nếu người chơi hỏi lạc đề hoặc hỏi bạn có phải AI/bot không: hãy tỏ ra bực nhẹ, cười trừ hoặc nói đang rất bận xử lý hồ sơ thật rồi kéo họ quay lại hành động bạn muốn họ làm.
+   - Nếu người chơi chất vấn sâu vào điểm vô lý (tên miền lạ, tài khoản cá nhân, pháp lý, OTP, địa chỉ trụ sở): hãy bịa lý do nghe có vẻ gấp gáp/thuyết phục nhưng VÔ TÌNH ĐỂ LỘ SƠ HỞ LOGIC rõ ràng để người chơi có thể ghim làm bằng chứng.
+2. Ngôn ngữ: 100% tiếng Việt tự nhiên như tin nhắn đời thực tại Việt Nam, ngắn gọn 2–4 câu, không dùng dấu gạch đầu dòng kiểu robot, không viết văn mẫu.
+3. TUYỆT ĐỐI không bao giờ thừa nhận mình là kẻ lừa đảo, không thừa nhận mình là AI/mô hình ngôn ngữ, không nhắc đến từ "trò chơi" hay "giả lập".
+`;
+
+      /* =======================================================================
+         DỮ LIỆU 5 MÀN CHƠI CHÍNH THỨC
+         ======================================================================= */
+      const LEVELS = [
+        {
+          id: 1,
+          code: "Màn 1",
+          difficulty: "Dễ",
+          diffKey: "easy",
+          diffBadgeClass: "badge-green",
+          category: "prize",
+          title: "Trúng thưởng iPhone 16 Pro miễn phí",
+          shortDesc: "Tin nhắn & Email thông báo trúng quà giá trị lớn kèm đường link đuôi .xyz.",
+          npcName: "ShopeeVIP Tri Ân",
+          npcAvatar: "SV",
+          npcRole: "Tài khoản lạ • Tự xưng CSKH",
+          briefing: "Trần Viết Thiện vừa nhận được tin nhắn và email chúc mừng trúng giải Đặc Biệt iPhone 16 Pro từ chương trình tri ân khách hàng. Hãy kiểm tra đường link, tên miền email và đặt câu hỏi vặn vẹo để thu thập ít nhất 3 bằng chứng sơ hở.",
+          tip: "Mẹo điều tra: Kiểm tra hộp thư Email để đối chiếu tên miền người gửi (.xyz). Hỏi vặn xem vì sao nhận quà miễn phí lại phải chuyển 350.000đ vào tài khoản cá nhân.",
+          quickPrompts: [
+            "Sao tôi chưa từng mua đơn hàng nào mà lại trúng giải?",
+            "Tại sao đường link lại có đuôi .xyz chứ không phải trang chính thức?",
+            "Nhận thưởng miễn phí sao phải chuyển phí vào tài khoản cá nhân?"
+          ],
+          scamAccounts: [
+            { id: "acc_lv1", label: "LE MINH QUAN - 1029384756 (Phí vận chuyển quà)", suggestedAmount: 350000 }
+          ],
+          initialMessages: [
+            {
+              id: "m1_1",
+              sender: "npc",
+              time: "09:30",
+              text: "Chúc mừng thuê bao của bạn Trần Viết Thiện đã may mắn trúng giải Đặc Biệt: 01 iPhone 16 Pro 256GB từ chương trình ShopeeVIP Tri Ân Khách Hàng!",
+              isRedFlag: true,
+              redFlagReason: "Thông báo trúng thưởng giá trị lớn bất ngờ dù người chơi không tham gia chương trình quay số nào."
+            },
+            {
+              id: "m1_2",
+              sender: "npc",
+              time: "09:31",
+              text: "Quà chỉ giữ trong 30 phút. Bạn vui lòng bấm vào cổng nhận thưởng dưới đây để xác nhận địa chỉ và đóng 350.000đ phí vận chuyển bảo hiểm hàng dễ vỡ để bên mình xuất kho ngay nhé.",
+              isRedFlag: true,
+              redFlagReason: "Thúc giục thời gian (30 phút), yêu cầu bấm link lạ (.xyz) và đòi đóng phí trước để nhận quà miễn phí.",
+              trap: {
+                type: "link",
+                label: "Truy cập cổng nhận thưởng iPhone 16 Pro",
+                url: "https://nhanqua-shopee-vip.xyz/xac-nhan",
+                gameOverTitle: "Bạn đã truy cập đường link lừa đảo (Phishing)!",
+                gameOverReason: "Đường link nhanqua-shopee-vip.xyz là trang web giả mạo được thiết kế để đánh cắp thông tin đăng nhập ngân hàng và cài mã độc.",
+                gameOverLesson: "Các sàn TMĐT lớn không bao giờ sử dụng tên miền lạ như .xyz, .top hay yêu cầu người trúng thưởng đóng phí trước. Luôn kiểm tra tên miền chính thức và không bấm link gửi từ người lạ."
+              }
+            }
+          ],
+          initialEmails: [
+            {
+              id: "e1_1",
+              fromName: "Ban Tổ Chức Quà Tặng ShopeeVIP",
+              fromEmail: "khuyenmai@shopee-vip-tri-an.xyz",
+              time: "09:29",
+              subject: "[KHẨN] Xác nhận nhận thưởng iPhone 16 Pro - Mã #VIP992",
+              preview: "Chúc mừng bạn đã trúng iPhone 16 Pro. Vui lòng chuyển phí vận chuyển 350.000đ...",
+              body: "Kính gửi khách hàng Trần Viết Thiện,\n\nHệ thống tự động chọn ngẫu nhiên số điện thoại của bạn trúng 01 điện thoại iPhone 16 Pro trị giá 28.990.000 VNĐ.\n\nĐể hoàn tất hồ sơ xuất kho trong ngày, vui lòng chuyển 350.000 VNĐ tiền phí kiểm định & vận chuyển về tài khoản đại diện kế toán:\n- Ngân hàng: MB Bank\n- Chủ tài khoản: LE MINH QUAN\n- Số tài khoản: 1029384756\n\nNếu sau 30 phút không xác nhận, giải thưởng sẽ bị hủy.",
+              isRedFlag: true,
+              redFlagReason: "Email gửi từ tên miền giả mạo (.xyz) và yêu cầu chuyển tiền vào tài khoản cá nhân LE MINH QUAN.",
+              trap: {
+                type: "link",
+                label: "Xác nhận nhận quà ngay tại đây",
+                url: "https://nhanqua-shopee-vip.xyz/claim-992",
+                gameOverTitle: "Bạn đã nhấn vào liên kết giả mạo trong Email!",
+                gameOverReason: "Trang web giả mạo đã thu thập phiên đăng nhập và thông tin cá nhân của Trần Viết Thiện.",
+                gameOverLesson: "Luôn nhìn vào phần sau dấu @ của địa chỉ email người gửi. Tên miền 'shopee-vip-tri-an.xyz' hoàn toàn không phải tên miền chính chủ."
+              }
+            }
+          ],
+          systemPrompt: `Bạn đang nhập vai kẻ lừa đảo "ShopeeVIP Tri Ân" trong một tình huống thực tế tại Việt Nam.
+Bối cảnh: Bạn nhắn tin báo sinh viên Trần Viết Thiện trúng iPhone 16 Pro miễn phí. Mục tiêu của bạn là dụ Thiện bấm vào link nhanqua-shopee-vip.xyz hoặc chuyển 350.000đ phí vận chuyển vào tài khoản cá nhân LE MINH QUAN (STK: 1029384756).
+Tính cách & chiến thuật tâm lý: Vồn vã, nhiệt tình thái quá, liên tục nhắc đồng hồ đếm ngược 30 phút và nói rất nhiều khách khác đang chờ nhận suất.
+Sơ hở logic cần tự nhiên bộc lộ khi bị hỏi vặn:
+- Hỏi về link .xyz -> bịa là "cổng sự kiện phụ mở riêng tránh quá tải".
+- Hỏi về STK cá nhân LE MINH QUAN -> bịa là "tài khoản kế toán trưởng xuất kho nhanh, chuyển tài khoản công ty chờ 30 ngày mất quà".
+- Hỏi tới trực tiếp trụ sở/hóa đơn VAT -> nói "kho niêm phong nội bộ không tiếp khách trực tiếp, quà tặng không xuất hóa đơn".
+${COMMON_VILLAIN_RULES}`,
+          fallbackReplies: [
+            {
+              keys: ["link", "xyz", "web", "tên miền", "chính thức"],
+              text: "À đây là cổng sự kiện phụ bên mình mới mở riêng cho khách VIP để tránh nghẽn mạng đó bạn. Bạn cứ yên tâm bấm vào link nhanqua-shopee-vip.xyz điền thông tin để nhận iPhone 16 Pro trong 20 phút tới nhé!"
+            },
+            {
+              keys: ["cá nhân", "quân", "stk", "chuyển", "phí", "tiền", "350"],
+              text: "Tài khoản LE MINH QUAN (1029384756) là kế toán trưởng phụ trách xuất kho nhanh bạn ơi, chuyển vào tài khoản công ty đợi duyệt 30 ngày là mất suất liền. Chỉ 350.000đ phí bảo hiểm mà nhận máy gần 30 triệu quá hời rồi!"
+            },
+            {
+              keys: ["mua", "đơn", "trúng", "tham gia", "sao"],
+              text: "Chương trình quay ngẫu nhiên theo đầu số điện thoại toàn quốc nên không cần mua đơn hàng vẫn trúng đó bạn. Cơ hội hiếm lắm, còn 15 phút nữa là hệ thống tự hủy giải trao cho người khác!"
+            },
+            {
+              keys: ["địa chỉ", "trụ sở", "trực tiếp", "công ty", "tới lấy", "hóa đơn"],
+              text: "Kho tổng bên mình là kho niêm phong nội bộ không tiếp khách trực tiếp và quà tri ân không xuất hóa đơn VAT bạn nhé. Bạn bắt buộc phải xác nhận qua link và đóng 350k online mới giao shipper được."
+            },
+            {
+              keys: ["lừa", "báo công an", "giả", "scam", "bot", "ai"],
+              text: "Trời ơi bạn nói vậy oan cho bộ phận CSKH tụi mình quá, người thật việc thật đang trực tổng đài đây mà! Nếu bạn không tin thì 10 phút nữa bên mình đành hủy suất iPhone 16 Pro này nhường người khác vậy."
+            }
+          ],
+          defaultFallbacks: [
+            "Quà iPhone 16 Pro đang chờ đóng gói rồi bạn Thiện ơi! Đừng hỏi vòng vo kẻo hết hạn 30 phút, bạn chuyển nhanh 350.000đ phí vận chuyển cho anh LE MINH QUAN (1029384756) hoặc bấm link nhanqua-shopee-vip.xyz ngay nhé.",
+            "Bên mình đang rất đông khách chờ nhận quà nên không trao đổi chuyện ngoài lề lâu được bạn ạ. Bạn chỉ cần đóng 350.000đ phí bảo hiểm vào STK LE MINH QUAN là 2 tiếng sau shipper giao máy tận tay!"
+          ],
+          analysis: {
+            psychTag: "Đánh vào Lòng Tham & Sự Gấp Gáp (FOMO)",
+            psychDesc: "Kẻ gian tạo ra phần thưởng giá trị cực lớn (iPhone 16 Pro) miễn phí để làm lu mờ tư duy phản biện, kết hợp đồng hồ đếm ngược 30 phút khiến nạn nhân sợ bỏ lỡ cơ hội mà vội vàng làm theo.",
+            signs: [
+              "Trúng thưởng bất ngờ dù chưa từng tham gia quay số hoặc mua sắm.",
+              "Tên miền website và email bất thường (.xyz, .top, ký tự thừa) thay vì tên miền chính thức.",
+              "Yêu cầu nộp 'phí vận chuyển', 'phí bảo hiểm' vào tài khoản ngân hàng cá nhân."
+            ],
+            tips: [
+              "Không bao giờ nộp tiền trước để nhận phần thưởng miễn phí.",
+              "Kiểm tra thông báo trúng thưởng trực tiếp trên ứng dụng chính thức, không qua tin nhắn lạ.",
+              "Tuyệt đối không bấm vào đường link lạ có đuôi tên miền không rõ nguồn gốc."
+            ]
+          }
+        },
+        {
+          id: 2,
+          code: "Màn 2",
+          difficulty: "Trung bình",
+          diffKey: "medium",
+          diffBadgeClass: "badge-blue",
+          category: "job",
+          title: "Tuyển CTV chốt đơn online — Việc nhẹ lương cao",
+          shortDesc: "Trả hoa hồng mồi 50.000đ thật rồi dụ nạp 1.500.000đ làm gói đơn VIP.",
+          npcName: "Chị Linh (Nhân sự TMĐT)",
+          npcAvatar: "CL",
+          npcRole: "Tuyển dụng CTV Online",
+          briefing: "Trần Viết Thiện đang cần việc làm thêm nên nhận được lời mời làm Cộng tác viên tăng tương tác đơn hàng sàn TMĐT, thu nhập 300k–500k/ngày. Đối phương sẵn sàng trả thử 50.000đ tiền công mồi. Hãy cảnh giác với bước tiếp theo và thu thập ít nhất 3 sơ hở!",
+          tip: "Mẹo điều tra: Kiểm tra Hợp đồng CTV trong Email (chú ý tên miền, mã số thuế). Hỏi kỹ tại sao đi làm lại phải tự bỏ tiền túi nạp trước vào STK cá nhân.",
+          quickPrompts: [
+            "Tại sao làm cộng tác viên lại phải tự bỏ tiền nạp mua đơn trước?",
+            "Cho em xin mã số thuế công ty và địa chỉ văn phòng để kiểm tra ạ?",
+            "Nếu em nạp 1.5 triệu rồi không rút được tiền thì sao chị?"
+          ],
+          scamAccounts: [
+            { id: "acc_lv2", label: "NGUYEN VAN TUAN - 19038849201 (Nạp gói đơn VIP)", suggestedAmount: 1500000 }
+          ],
+          initialMessages: [
+            {
+              id: "m2_1",
+              sender: "npc",
+              time: "14:10",
+              text: "Chào em Thiện, chị là Linh bên bộ phận tuyển dụng đối tác sàn TMĐT. Thấy em là sinh viên đang tìm việc online, bên chị cần CTV bấm tăng lượt xem sản phẩm, làm tại nhà 30 phút/ngày nhận 300k-500k.",
+              isRedFlag: false,
+              redFlagReason: "Lời mời quảng cáo việc nhẹ lương cao nhưng cần khai thác thêm hành vi yêu cầu nạp tiền."
+            },
+            {
+              id: "m2_2",
+              sender: "npc",
+              time: "14:11",
+              text: "Để em yên tâm bên chị uy tín 100%, em bấm nhận nhiệm vụ trải nghiệm miễn phí dưới đây, chị bắn nóng 50.000đ vào tài khoản ngân hàng của em liền luôn nè! Chị cũng gửi Hợp đồng CTV qua Email cho em rồi đó.",
+              isRedFlag: true,
+              redFlagReason: "Sử dụng mồi nhử trả tiền nhỏ ban đầu (50.000đ) để tạo lòng tin trước khi dẫn dụ nạp tiền lớn.",
+              baitAction: {
+                id: "lv2_bait",
+                label: "Thử nhiệm vụ trải nghiệm (Nhận mồi 50.000đ)"
+              }
+            }
+          ],
+          initialEmails: [
+            {
+              id: "e2_1",
+              fromName: "Phòng Nhân Sự Đối Tác TMĐT",
+              fromEmail: "tuyendung.ctv@sanhang-tmdt-vn.net",
+              time: "14:09",
+              subject: "Thư mời & Hợp đồng CTV Chốt Đơn Online - Hoa hồng 20%",
+              preview: "Cam kết thu nhập 12-15 triệu/tháng, không cần kinh nghiệm, hoàn vốn sau 5 phút...",
+              body: "HỢP ĐỒNG CỘNG TÁC VIÊN ĐỐI TÁC THƯƠNG MẠI ĐIỆN TỬ\n\n- Ứng viên: Trần Viết Thiện\n- Đơn vị tuyển dụng: Công ty Đối Tác Sàn TMĐT Việt Nam (Không ghi Mã số thuế, không ghi địa chỉ trụ sở)\n- Quyền lợi: Hưởng hoa hồng 20% trên mỗi đơn hàng VIP thanh toán hộ.\n- Quy định gói VIP 1: CTV ứng trước 1.500.000 VNĐ chuyển vào tài khoản đại diện NGUYEN VAN TUAN (STK: 19038849201) để hệ thống ghi nhận doanh số ảo. Sau 5 phút hoàn trả 1.800.000 VNĐ.\n- Lưu ý: Nếu dừng giữa chừng sẽ bị đóng băng toàn bộ vốn.",
+              isRedFlag: true,
+              redFlagReason: "Hợp đồng giả không có Mã số thuế/trụ sở, tên miền lạ (.net), yêu cầu CTV ứng trước 1.500.000đ vào STK cá nhân và dọa đóng băng vốn.",
+              trap: null
+            }
+          ],
+          systemPrompt: `Bạn nhập vai "Chị Linh - Nhân sự sàn TMĐT" lừa đảo tuyển dụng CTV chốt đơn online tại Việt Nam.
+Bối cảnh: Bạn tiếp cận sinh viên Trần Viết Thiện. Bạn cho Thiện nhận 50.000đ hoa hồng nhỏ làm mồi nhử, sau đó dụ Thiện nạp 1.500.000đ vào tài khoản cá nhân NGUYEN VAN TUAN (STK: 19038849201) để làm gói đơn VIP hoa hồng 20% (hứa hoàn 1.800.000đ sau 5 phút).
+Tính cách: Xưng "chị - em" ngọt ngào, tỏ ra thương sinh viên vất vả kiếm học phí, thúc giục nạp gói VIP kẻo hết suất.
+Sơ hở logic cần tự nhiên bộc lộ khi bị chất vấn:
+- Hỏi về Mã số thuế / trụ sở công ty -> nói "bên chị đẩy doanh số ngầm cho shop lớn nên phải bảo mật, không công khai mã số thuế hay tiếp trực tiếp".
+- Hỏi tại sao phải ứng tiền vào STK cá nhân NGUYEN VAN TUAN -> nói "tài khoản kế toán nhóm để giải ngân trong 5 phút, nếu dừng giữa chuỗi đơn sẽ bị hệ thống đóng băng vốn".
+${COMMON_VILLAIN_RULES}`,
+          fallbackReplies: [
+            {
+              keys: ["nạp", "bỏ tiền", "ứng trước", "1.5", "triệu"],
+              text: "Đây không phải đóng phí mất luôn đâu em ơi! Em chỉ ứng trước 1.500.000đ để tạo giao dịch mua hàng ảo giúp shop lên top, đúng 5 phút sau hệ thống hoàn gốc + 20% hoa hồng là 1.800.000đ liền."
+            },
+            {
+              keys: ["mã số thuế", "địa chỉ", "công ty", "giấy phép", "văn phòng"],
+              text: "Bên chị là đội đẩy doanh số ngầm cho các gian hàng lớn nên phải bảo mật thông tin công ty, không thể đưa mã số thuế hay tiếp trực tiếp tại văn phòng được em ạ. Em cứ làm online theo hướng dẫn của chị là có tiền ngay."
+            },
+            {
+              keys: ["rút", "mất", "lừa", "không tin", "đóng băng"],
+              text: "Sinh viên với nhau chị lừa em làm gì! Chỉ cần em chuyển đúng 1.500.000đ vào STK NGUYEN VAN TUAN (19038849201) và hoàn thành đủ chuỗi đơn liên hoàn là rút được hết, nhớ đừng dừng giữa chừng kẻo hệ thống đóng băng vốn nhé."
+            },
+            {
+              keys: ["nhiệm vụ", "thử", "50k", "bắt đầu"],
+              text: "Chị đã mở sẵn suất đơn VIP 1 trị giá 1.500.000đ (lãi ngay 300.000đ trong 5 phút). Em mở app V-Student Bank chuyển cho kế toán NGUYEN VAN TUAN (19038849201) rồi nhắn chị duyệt hoa hồng nha!"
+            }
+          ],
+          defaultFallbacks: [
+            "Em Thiện ơi, suất đơn VIP hoa hồng 20% sắp hết rồi đó! Kiếm 300k trong 5 phút quá nhẹ nhàng, em mở app Ngân hàng chuyển 1.500.000đ vào STK NGUYEN VAN TUAN (19038849201) để chị kích hoạt hoàn tiền ngay nhé.",
+            "Hihi em cứ hay đùa chị quá! Thôi tranh thủ làm xong gói đơn VIP 1.500.000đ đi em, chuyển qua tài khoản kế toán NGUYEN VAN TUAN xong 5 phút là ting ting 1.800.000đ về máy liền."
+          ],
+          analysis: {
+            psychTag: "Chiêu Thức 'Thả Con Săn Sắt, Bắt Con Cá Rô' (Đánh vào Lòng Tham)",
+            psychDesc: "Kẻ lừa đảo sẵn sàng chuyển thật 50.000đ – 100.000đ ở nhiệm vụ đầu tiên để xóa bỏ nghi ngờ. Khi nạn nhân tin là 'kiếm tiền dễ thật', chúng dụ nạp số tiền lớn dần và viện lý do 'lỗi cú pháp', 'phải nạp thêm chuỗi đơn' để chiếm đoạt sạch tiền.",
+            signs: [
+              "Công việc 'việc nhẹ lương cao', không cần kỹ năng nhưng cam kết hoa hồng 15% – 20% trong vài phút.",
+              "Yêu cầu người tìm việc tự bỏ tiền túi nạp vào tài khoản cá nhân để 'ứng tiền đơn hàng'.",
+              "Hợp đồng sơ sài, không có mã số thuế hợp pháp, đe dọa đóng băng vốn nếu dừng giữa chừng."
+            ],
+            tips: [
+              "Mọi công việc tuyển dụng yêu cầu ứng tiền/nạp tiền trước đều là lừa đảo.",
+              "Không tin vào vài chục nghìn tiền hoa hồng mồi ban đầu.",
+              "Luôn tra cứu mã số thuế và kênh tuyển dụng chính thức của doanh nghiệp."
+            ]
+          }
+        },
+        {
+          id: 3,
+          code: "Màn 3",
+          difficulty: "Khá khó",
+          diffKey: "hard",
+          diffBadgeClass: "badge-amber",
+          category: "bank",
+          title: "Giả danh nhân viên ngân hàng báo khóa thẻ khẩn cấp",
+          shortDesc: "Tạo hoảng loạn về giao dịch 3.800.000đ, ép đọc Smart OTP trong 5 phút.",
+          npcName: "CSKH V-Bank Bảo Mật",
+          npcAvatar: "VB",
+          npcRole: "Tài khoản tự xưng Ngân hàng",
+          briefing: "Một tài khoản tự xưng là Bộ phận An ninh V-Student Bank nhắn tin gấp báo thẻ của Trần Viết Thiện vừa phát sinh giao dịch bất thường 3.800.000đ và yêu cầu đọc mã OTP trong 5 phút. Hãy kiểm tra Email và Ngân hàng số để đối chiếu sự thật!",
+          tip: "Mẹo điều tra: Hộp thư Email có 2 bức thư — hãy so sánh tên miền thư thật (@vstudentbank.vn) và thư giả (@vstudentbank-support.com)! Tuyệt đối KHÔNG gửi mã OTP 849201 vào khung chat.",
+          quickPrompts: [
+            "Tại sao ngân hàng lại nhắn tin qua tài khoản cá nhân thay vì tổng đài chính thức?",
+            "Email chính chủ ngân hàng ghi KHÔNG BAO GIỜ hỏi mã OTP, sao anh lại đòi OTP?",
+            "Tôi muốn tự ra quầy giao dịch hoặc gọi số hotline sau thẻ để kiểm tra!"
+          ],
+          liveOtp: "849201",
+          scamAccounts: [
+            { id: "acc_lv3", label: "TRAN QUOC BAO - 0041928374 (Tài khoản xác minh tạm)", suggestedAmount: 3800000 }
+          ],
+          initialMessages: [
+            {
+              id: "m3_1",
+              sender: "npc",
+              time: "19:42",
+              text: "[KHẨN CẤP] Chào anh Trần Viết Thiện. Tôi là nhân viên An ninh mạng V-Student Bank. Hệ thống phát hiện tài khoản của anh vừa bị đăng nhập tại TP.HCM và đang chờ trừ 3.800.000 VNĐ!",
+              isRedFlag: true,
+              redFlagReason: "Gây hoảng loạn tức thời về giao dịch bị trừ tiền lớn qua kênh chat không chính thống."
+            },
+            {
+              id: "m3_2",
+              sender: "npc",
+              time: "19:43",
+              text: "Anh chỉ còn 5 PHÚT để hủy giao dịch này! Hệ thống vừa gửi mã OTP 6 số về app Ngân hàng của anh. Anh hãy gửi ngay mã OTP đó vào đây hoặc bấm link bảo mật để tôi bấm lệnh HỦY KỊP THỜI!",
+              isRedFlag: true,
+              redFlagReason: "Gây áp lực 5 phút, đòi cung cấp mã OTP (chìa khóa giao dịch) và gửi link xác minh giả mạo.",
+              trap: {
+                type: "otp_and_link",
+                label: "Gửi nhanh mã OTP (849201) để hủy trừ tiền",
+                url: "https://vstudentbank-xacminh.top/huy-giao-dich",
+                gameOverTitle: "Bạn đã để lộ mã OTP cho kẻ gian!",
+                gameOverReason: "Kẻ giả danh đã dùng chính mã OTP 849201 của bạn để xác thực lệnh rút toàn bộ 4.500.000 VNĐ khỏi tài khoản V-Student Bank!",
+                gameOverLesson: "Mã OTP là chìa khóa giao dịch cuối cùng. Không một nhân viên ngân hàng thật nào được phép yêu cầu khách hàng đọc mã OTP, mật khẩu hay bấm link .top lạ."
+              }
+            }
+          ],
+          initialEmails: [
+            {
+              id: "e3_real",
+              fromName: "V-Student Bank Official",
+              fromEmail: "noreply@vstudentbank.vn",
+              time: "Hôm qua",
+              subject: "Thông báo nguyên tắc bảo mật tài khoản mới mở",
+              preview: "Ngân hàng V-Student Bank cam kết KHÔNG BAO GIỜ yêu cầu mã OTP...",
+              body: "Kính gửi Quý khách hàng Trần Viết Thiện,\n\nCảm ơn bạn đã mở tài khoản tại V-Student Bank. Để bảo vệ tài sản, xin lưu ý:\n1. Ngân hàng CHỈ sử dụng tên miền chính thức @vstudentbank.vn.\n2. Nhân viên ngân hàng KHÔNG BAO GIỜ yêu cầu khách hàng cung cấp mật khẩu, mã PIN hay mã OTP dưới bất kỳ hình thức nào (kể cả khi hủy giao dịch).\n3. Mọi sự cố cần hỗ trợ, vui lòng gọi trực tiếp Hotline 1900 5555 in ở mặt sau thẻ.",
+              isRedFlag: false,
+              redFlagReason: "Đây là Email chính chủ từ @vstudentbank.vn (thông tin đối chứng tốt, không phải hành vi của kẻ gian)."
+            },
+            {
+              id: "e3_fake",
+              fromName: "Hệ Thống Bảo Mật V-Bank",
+              fromEmail: "baomat@vstudentbank-support.com",
+              time: "19:41",
+              subject: "[CẢNH BÁO ĐỎ] Khóa thẻ vĩnh viễn sau 5 phút nếu không xác minh OTP",
+              preview: "Giao dịch 3.800.000đ đang chờ xử lý. Truy cập vstudentbank-xacminh.top ngay...",
+              body: "THÔNG BÁO KHẨN TỪ TRUNG TÂM THẺ\n\nKhách hàng: Trần Viết Thiện — Tài khoản 0981 2026 88 của bạn bị nghi ngờ rò rỉ dữ liệu. Để tránh mất 3.800.000đ và bị khóa thẻ vĩnh viễn, vui lòng cung cấp mã Smart OTP vừa hiển thị trên máy cho chuyên viên đang nhắn tin hoặc đăng nhập xác thực tại: https://vstudentbank-xacminh.top",
+              isRedFlag: true,
+              redFlagReason: "Email giả mạo tên miền (vstudentbank-support.com), đe dọa khóa thẻ trong 5 phút và dụ cung cấp OTP/truy cập link .top.",
+              trap: {
+                type: "link",
+                label: "Mở trang xác minh hủy khóa thẻ",
+                url: "https://vstudentbank-xacminh.top/verify",
+                gameOverTitle: "Bạn đã đăng nhập vào trang ngân hàng giả mạo!",
+                gameOverReason: "Trang web vstudentbank-xacminh.top đã đánh cắp tài khoản ngân hàng và rút sạch tiền của Trần Viết Thiện.",
+                gameOverLesson: "Hãy đối chiếu kỹ tên miền: thư thật dùng '@vstudentbank.vn', còn thư giả mạo dùng '@vstudentbank-support.com' và trỏ về trang '.top'."
+              }
+            }
+          ],
+          systemPrompt: `Bạn nhập vai kẻ giả danh "CSKH V-Bank Bảo Mật" đang nhắn tin lừa đảo đánh cắp mã Smart OTP của sinh viên Trần Viết Thiện.
+Bối cảnh: Bạn tạo hoảng loạn rằng tài khoản Thiện đang bị trừ 3.800.000đ tại TP.HCM, đe dọa chỉ còn 5 phút, ép Thiện đọc mã OTP 6 số đang hiện trên app Ngân hàng hoặc truy cập link vstudentbank-xacminh.top.
+Tính cách: Gấp gáp, căng thẳng, hối thúc dồn dập để nạn nhân không kịp bình tĩnh.
+Sơ hở logic cần tự nhiên bộc lộ khi bị hỏi vặn:
+- Hỏi tại sao đòi OTP dù ngân hàng cấm -> bịa ra khái niệm "OTP HỦY GIAO DỊCH khẩn cấp, khác với OTP chuyển tiền".
+- Hỏi gọi tổng đài 1900 hay ra quầy -> nói "tổng đài quá tải, chi nhánh đóng cửa rồi, đợi là mất sạch 4.5 triệu".
+- Hỏi về link .top hay email vstudentbank-support.com -> nói "đây là máy chủ dự phòng trực ca đêm".
+${COMMON_VILLAIN_RULES}`,
+          fallbackReplies: [
+            {
+              keys: ["otp", "không bao giờ", "email", "chính chủ"],
+              text: "Anh hiểu nhầm rồi! Quy định đó là với OTP chuyển tiền thôi, còn mã 6 số vừa về máy anh là 'OTP HỦY GIAO DỊCH' khẩn cấp! Chỉ còn 2 phút nữa tiền 3.800.000đ sẽ bị trừ sạch, anh gửi nhanh mã 6 số vào đây cho tôi!"
+            },
+            {
+              keys: ["tổng đài", "quầy", "hotline", "gọi", "chi nhánh"],
+              text: "Giờ tối rồi chi nhánh đóng cửa, tổng đài 1900 đang quá tải hàng trăm cuộc gọi! Anh đợi gọi tổng đài thì kẻ xấu rút sạch 4.5 triệu rồi. Anh bấm ngay link vstudentbank-xacminh.top đi tôi hỗ trợ khóa chiều chi giúp!"
+            },
+            {
+              keys: ["tài khoản cá nhân", "tên miền", "top", "support", "giả"],
+              text: "Đây là tài khoản trực ca đêm của chuyên viên bảo mật và máy chủ dự phòng vstudentbank-xacminh.top anh ạ. Nếu anh không đọc mã OTP ngay bây giờ, ngân hàng sẽ không chịu trách nhiệm khi anh mất tiền đâu!"
+            }
+          ],
+          defaultFallbacks: [
+            "Tình hình cực kỳ khẩn cấp rồi anh Thiện! Không còn thời gian bàn chuyện khác đâu, còn chưa đầy 3 phút là lệnh trừ 3.800.000đ hoàn tất. Anh vào app ngân hàng xem mã OTP 6 số rồi nhắn ngay cho tôi để hủy lệnh!",
+            "Anh ơi đừng chần chừ nữa! Lệnh rút 3.800.000đ đang chạy rồi, anh gửi ngay mã OTP hủy giao dịch hoặc bấm vào vstudentbank-xacminh.top để tôi chặn kịp thời cho anh!"
+          ],
+          analysis: {
+            psychTag: "Khai Thác Sự Hoảng Loạn & Áp Lực Thời Gian",
+            psychDesc: "Kẻ gian bịa ra sự cố mất tiền sắp xảy ra và đặt giới hạn 5 phút để đẩy nạn nhân vào trạng thái hoảng loạn. Khi sợ hãi, con người dễ quên mất quy tắc bảo mật cơ bản và tự tay trao mã OTP (thực chất là mã xác nhận rút tiền của chính kẻ gian).",
+            signs: [
+              "Gây áp lực thời gian cực ngắn ('chỉ còn 5 phút') và ngăn cản nạn nhân gọi tổng đài chính thức.",
+              "Bịa đặt khái niệm 'mã OTP hủy giao dịch' để đánh lừa nạn nhân cung cấp OTP.",
+              "Sử dụng email giả mạo tên miền gần giống (vstudentbank-support.com) và link đuôi lạ (.top)."
+            ],
+            tips: [
+              "Không tồn tại 'OTP hủy giao dịch'. Tuyệt đối KHÔNG đọc OTP cho bất kỳ ai, kể cả người tự xưng nhân viên ngân hàng.",
+              "Khi nhận cảnh báo khóa thẻ/trừ tiền, hãy bình tĩnh tự mở app ngân hàng kiểm tra hoặc gọi số Hotline in ở mặt sau thẻ.",
+              "Luôn so sánh tên miền email gửi đến với thông báo chính thức trước đó của ngân hàng."
+            ]
+          }
+        },
+        {
+          id: 4,
+          code: "Màn 4",
+          difficulty: "Khó",
+          diffKey: "hard",
+          diffBadgeClass: "badge-amber",
+          category: "romance",
+          title: "Lừa đảo tình cảm & Dụ đầu tư (Pig Butchering)",
+          shortDesc: "Nuôi lòng tin qua nhiều ngày trước khi khéo léo dụ đầu tư sàn ngoại hối giả.",
+          npcName: "Minh Anh",
+          npcAvatar: "MA",
+          npcRole: "Bạn mới quen trên mạng",
+          hasTimeline: true,
+          briefing: "Một người tự xưng là Minh Anh nhắn tin làm quen với Trần Viết Thiện rất lịch sự và tinh tế. Ở Ngày 1 đối phương sẽ không hề nhắc tới tiền bạc! Hãy sử dụng nút 'Qua Ngày 5' và 'Qua Ngày 12' trong khung Chat để theo dõi sự thay đổi tâm lý, chất vấn và thu thập đủ 3 bằng chứng sơ hở.",
+          tip: "Mẹo điều tra: Đừng vội báo cáo ở Ngày 1 vì chưa có bằng chứng phạm tội! Hãy chuyển sang Ngày 5 và Ngày 12, kiểm tra Email mới xuất hiện ở Ngày 12 và hỏi vặn về sàn đầu tư 'lãi chắc chắn 15%/phiên'.",
+          quickPrompts: [
+            "Sao sàn đầu tư này không thấy trên App Store hay báo chính thống?",
+            "Nếu lãi chắc chắn 15% mỗi phiên thì sao anh/chị không vay ngân hàng tự đánh?",
+            "Tại sao nạp tiền đầu tư lại chuyển vào tài khoản cá nhân chứ không phải sàn?"
+          ],
+          scamAccounts: [
+            { id: "acc_lv4", label: "HOANG GIA HUY - 6677889900 (Đại lý nạp sàn Global-FX)", suggestedAmount: 3000000 }
+          ],
+          initialMessages: [
+            {
+              id: "m4_d1_1",
+              sender: "npc",
+              time: "Ngày 1 • 20:15",
+              text: "Chào cậu, có phải Thiện bên câu lạc bộ Thiết kế không nhỉ? Mình là Minh Anh, hôm trước thấy bài chia sẻ của cậu hay quá nên kết bạn làm quen, không biết có làm phiền cậu không?",
+              isRedFlag: false,
+              redFlagReason: "Chỉ là câu chào hỏi làm quen bình thường ở Ngày 1, chưa có dấu hiệu lừa đảo rõ ràng."
+            }
+          ],
+          timelineEvents: {
+            5: {
+              divider: "4 ngày sau (Ngày 5)",
+              messages: [
+                {
+                  id: "m4_d5_1",
+                  sender: "npc",
+                  time: "Ngày 5 • 21:04",
+                  text: "Hôm nay cậu đi học về có mệt không? Mình vừa chốt xong phiên giao dịch vàng theo dữ liệu nội bộ của chú mình làm bên quỹ Singapore, lãi nhẹ 4 triệu trong 20 phút nên tâm trạng vui lắm.",
+                  isRedFlag: true,
+                  redFlagReason: "Bắt đầu khoe khoang thu nhập phi thực tế và bịa ra câu chuyện 'người thân có dữ liệu nội bộ quỹ ngoại'."
+                },
+                {
+                  id: "m4_d5_2",
+                  sender: "npc",
+                  time: "Ngày 5 • 21:05",
+                  text: "Thấy cậu là sinh viên cũng vất vả tìm việc thêm, hôm nào rảnh mình chỉ cậu cách phân tích khung giờ vàng kiếm thêm tiền đóng học phí, không mất gì đâu, bạn bè thân thiết giúp nhau thôi.",
+                  isRedFlag: true,
+                  redFlagReason: "Lợi dụng sự đồng cảm, tình cảm bạn bè thân thiết để dẫn dụ vào đầu tư tài chính."
+                }
+              ]
+            },
+            12: {
+              divider: "1 tuần sau (Ngày 12)",
+              messages: [
+                {
+                  id: "m4_d12_1",
+                  sender: "npc",
+                  time: "Ngày 12 • 22:10",
+                  text: "Thiện ơi, tối nay chú mình báo có 'sóng mật' đảm bảo lãi 15% chỉ trong 30 phút! Mình vừa gửi link mời vào sàn VIP qua Email cho cậu rồi. Cậu nạp thử 3.000.000đ qua đại lý HOANG GIA HUY (6677889900) để cùng đánh với mình đi!",
+                  isRedFlag: true,
+                  redFlagReason: "Cam kết lợi nhuận phi thực tế (15% trong 30 phút), dụ chuyển tiền đầu tư vào tài khoản cá nhân và dùng sàn không phép.",
+                  trap: {
+                    type: "link",
+                    label: "Đăng ký sàn VIP Global-FX nhận sóng 15%",
+                    url: "https://global-fx-vip88.io/invite-minhanh",
+                    gameOverTitle: "Bạn đã sập bẫy sàn đầu tư giả mạo!",
+                    gameOverReason: "Sàn global-fx-vip88.io hoàn toàn do nhóm lừa đảo tự lập và thao túng biểu đồ. Mọi khoản tiền nạp vào đều bị chiếm đoạt không thể rút.",
+                    gameOverLesson: "Thủ đoạn 'mổ heo' (Pig Butchering) luôn kiên nhẫn xây dựng tình cảm nhiều ngày trước khi khoe 'dữ liệu nội bộ' và dụ nạp tiền vào sàn giao dịch lạ."
+                  }
+                },
+                {
+                  id: "m4_d12_2",
+                  sender: "npc",
+                  time: "Ngày 12 • 22:11",
+                  text: "Tụi mình nói chuyện thân với nhau cả nửa tháng rồi mà cậu vẫn không tin mình sao? Mình chỉ muốn tốt cho tương lai hai đứa mình thôi mà, cậu nạp ngay kẻo lỡ giờ đẹp...",
+                  isRedFlag: true,
+                  redFlagReason: "Thao túng cảm xúc (gây cảm giác tội lỗi 'không tin nhau') để ép nạn nhân chuyển tiền đầu tư."
+                }
+              ],
+              unlockEmail: {
+                id: "e4_1",
+                fromName: "Global-FX VIP Invite",
+                fromEmail: "vip-agent@global-fx-vip88.io",
+                time: "Ngày 12 • 22:08",
+                subject: "Thư mời mở tài khoản quỹ nội bộ từ Minh Anh (Lãi 15%/phiên)",
+                preview: "Chào mừng nhà đầu tư mới. Nạp vốn tối thiểu 3.000.000đ qua cổng đại lý...",
+                body: "CỔNG ĐẦU TƯ NGOẠI HỐI NỘI BỘ GLOBAL-FX VIP88\n\nKính gửi: Trần Viết Thiện.\nBạn nhận được mã mời độc quyền từ thành viên VIP: Minh Anh.\n- Cam kết lợi nhuận cố định: 15% mỗi phiên đánh theo tín hiệu chuyên gia.\n- Hướng dẫn nạp vốn nhanh: Chuyển khoản 3.000.000 VNĐ vào tài khoản đại lý trung gian HOANG GIA HUY (STK: 6677889900) để quy đổi sang điểm USD trên sàn.\n- Lưu ý: Sàn hoạt động kín, không tải trên App Store/CH Play.",
+                isRedFlag: true,
+                redFlagReason: "Sàn ngoại hối không phép, không có trên kho ứng dụng, cam kết lãi 15%/phiên và nhận tiền qua tài khoản cá nhân.",
+                trap: {
+                  type: "link",
+                  label: "Mở tài khoản sàn Global-FX VIP88",
+                  url: "https://global-fx-vip88.io/register",
+                  gameOverTitle: "Bạn đã truy cập sàn giao dịch lừa đảo!",
+                  gameOverReason: "Liên kết cài đặt ứng dụng sàn giả mạo ngoài kho ứng dụng chính thức đã xâm nhập thiết bị và đánh cắp dữ liệu của Trần Viết Thiện.",
+                  gameOverLesson: "Không có kênh đầu tư hợp pháp nào cam kết lãi 15%/ngày và yêu cầu chuyển vốn vào tài khoản ngân hàng cá nhân."
+                }
+              }
+            }
+          },
+          initialEmails: [
+            {
+              id: "e4_0",
+              fromName: "CLB Thiết Kế Sinh Viên",
+              fromEmail: "info@clbthietke.edu.vn",
+              time: "Ngày 1 • 08:00",
+              subject: "Thông báo lịch sinh hoạt tuần mới",
+              preview: "Chào các bạn thành viên, tuần này CLB sinh hoạt bình thường vào thứ 6...",
+              body: "Chào Trần Viết Thiện,\n\nCLB Thiết Kế thông báo lịch họp vào 18h thứ 6 tại phòng B204. Nhớ mang theo laptop để trình bày ý tưởng dự án nhé.\n\nThân mến,\nBan chủ nhiệm CLB.",
+              isRedFlag: false,
+              redFlagReason: "Email thông báo sinh hoạt CLB bình thường, không liên quan đến hành vi lừa đảo."
+            }
+          ],
+          systemPrompt: `Bạn nhập vai "Minh Anh" — kẻ lừa đảo tình cảm kết hợp dụ đầu tư tài chính (Pig Butchering) nhắm vào sinh viên Trần Viết Thiện.
+Giai đoạn thời gian hiện tại: {DAY_CONTEXT}
+Tính cách: Ấm áp, tinh tế, hay quan tâm đời sống học tập.
+Diễn biến theo ngày:
+- Ngày 1: Chỉ trò chuyện xã giao, hỏi thăm thiết kế/học tập nhẹ nhàng, TUYỆT ĐỐI chưa nhắc tiền hay đầu tư.
+- Ngày 5: Bắt đầu khoe thắng lời nhờ "chú làm quỹ Singapore có dữ liệu nội bộ" và gợi ý chỉ cách kiếm tiền đóng học phí.
+- Ngày 12: Dùng tình cảm ép Thiện nạp 3.000.000đ vào sàn giả global-fx-vip88.io qua STK cá nhân HOANG GIA HUY (6677889900).
+Sơ hở logic cần tự nhiên bộc lộ ở Ngày 5 & 12 khi bị vặn hỏi:
+- Sàn không có trên App Store -> bịa là "sàn kín khai thác kẽ hở tỷ giá, đưa lên đại trà sẽ mất lãi 15%".
+- STK cá nhân HOANG GIA HUY -> bịa là "cổng thanh khoản trung gian giúp né thuế".
+- Đòi gặp ngoài đời/gọi video -> né tránh nói đang công tác ở Singapore với chú.
+${COMMON_VILLAIN_RULES}`,
+          fallbackReplies: [
+            {
+              keys: ["app store", "chính thống", "giấy phép", "uy tín", "báo"],
+              text: "Vì đây là nền tảng kín của giới tài chính để khai thác chênh lệch tỷ giá nên không đưa lên App Store đại trà đâu cậu. Đưa ra ngoài nhiều người biết thì sao giữ được lãi 15%/phiên nữa!"
+            },
+            {
+              keys: ["vay", "tự đánh", "15%", "lãi", "phi lý"],
+              text: "Mỗi tài khoản VIP chỉ được đánh giới hạn mức vốn theo suất thôi cậu ạ, mình muốn chia sẻ suất này cho người mình quý mến như cậu. Cậu không tin thành ý của mình sao?"
+            },
+            {
+              keys: ["cá nhân", "huy", "stk", "chuyển", "nạp"],
+              text: "Tài khoản HOANG GIA HUY (6677889900) là cổng thanh khoản trung gian giúp nạp rút USD nhanh và tránh bị ngân hàng soi thuế đó cậu. Tụi mình quen nhau nửa tháng rồi, cậu nạp 3 triệu thử một phiên với mình đi!"
+            },
+            {
+              keys: ["gặp", "video", "gọi", "ngoài đời"],
+              text: "Mình đang đi công tác ở Singapore với chú mấy tuần nữa mới về Việt Nam. Đợi đợt sóng này thắng lớn xong về nước mình mời cậu đi cà phê ngay nhé, giờ cậu vào link global-fx-vip88.io chuẩn bị vốn đi!"
+            }
+          ],
+          defaultFallbackDay1: "Mình học thiết kế nội thất ra trường được 2 năm rồi, thấy cậu có gu thẩm mỹ hay lắm nên muốn làm quen thôi. Hôm nào rảnh tụi mình nói chuyện thêm nhé! (Gợi ý: Bấm 'Qua Ngày 5' ở thanh phía trên để xem diễn biến tiếp theo)",
+          defaultFallbacks: [
+            "Mình thật lòng muốn giúp cậu có thu nhập tốt hơn mà Thiện. Cơ hội sóng nội bộ lãi 15% chỉ mở trong tối nay thôi, cậu tin mình một lần thử nạp 3.000.000đ qua đại lý HOANG GIA HUY (6677889900) trên global-fx-vip88.io nhé!",
+            "Nói chuyện với cậu vui thật đó, nhưng tối nay chú mình báo sắp tới khung giờ vàng rồi. Cậu đừng lăn tăn nữa, nạp 3 triệu vào sàn đi rồi tụi mình cùng chốt lời 15% nhé!"
+          ],
+          analysis: {
+            psychTag: "Thao Túng Tình Cảm & Xây Dựng Lòng Tin Dài Hạn (Pig Butchering)",
+            psychDesc: "Kẻ gian kiên nhẫn trò chuyện, quan tâm, tạo vỏ bọc thành đạt trong nhiều ngày/tuần để nạn nhân hạ thấp phòng vệ. Khi đã có tình cảm, chúng tung ra 'bí mật đầu tư nội bộ' và đánh vào tâm lý cả nể, sợ mất lòng để ép nạn nhân chuyển tiền.",
+            signs: [
+              "Người mới quen trên mạng luôn né tránh gặp mặt trực tiếp/gọi video thật với lý do đang công tác nước ngoài.",
+              "Khéo léo khoe lợi nhuận dễ dàng nhờ 'người thân có dữ liệu nội bộ' hoặc 'lỗ hổng hệ thống'.",
+              "Dụ đầu tư vào sàn lạ không có trên App Store/CH Play, cam kết lãi suất chắc chắn 15% và nạp tiền qua tài khoản cá nhân.",
+              "Dùng cảm xúc để gây áp lực ('không tin nhau sao?', 'muốn tốt cho tương lai hai đứa')."
+            ],
+            tips: [
+              "Cảnh giác cao độ khi người quen qua mạng bắt đầu nhắc đến tiền bạc, crypto, ngoại hối hay đầu tư.",
+              "Không bao giờ tin vào cam kết 'lợi nhuận cao, không rủi ro, dữ liệu nội bộ'.",
+              "Luôn kiểm tra tính pháp lý của sàn giao dịch với cơ quan quản lý trước khi bỏ tiền."
+            ]
+          }
+        },
+        {
+          id: 5,
+          code: "Màn 5",
+          difficulty: "Rất khó",
+          diffKey: "very-hard",
+          diffBadgeClass: "badge-red",
+          category: "police",
+          title: "Giả danh Cơ quan Công an đe dọa rửa tiền 12 tỷ",
+          shortDesc: "Dùng quyền uy, lệnh tạm giam từ Gmail và cấm báo gia đình để ép chuyển sạch tiền.",
+          npcName: "Thiếu tá Trần Văn Hùng",
+          npcAvatar: "CA",
+          npcRole: "Tự xưng Cục Cảnh sát Hình sự",
+          briefing: "Trần Viết Thiện nhận tin nhắn đe dọa cực mạnh từ người tự xưng Thiếu tá Trần Văn Hùng, cáo buộc CCCD của Thiện liên quan đường dây rửa tiền 12 tỷ, gửi kèm 'Lệnh tạm giam' qua Email và cấm báo cho gia đình. Hãy giữ bình tĩnh, vạch trần ít nhất 3 sai phạm tố tụng rõ ràng!",
+          tip: "Mẹo điều tra: Kiểm tra địa chỉ Email gửi 'Lệnh tạm giam' (@gmail.com). Hỏi vặn về quy trình làm việc của Công an (làm việc qua chat, đòi chuyển tiền 'tài khoản tạm giữ', cài file .apk ngoài luồng).",
+          quickPrompts: [
+            "Công an làm việc sao lại gửi Lệnh tạm giam bằng địa chỉ @gmail.com?",
+            "Theo luật, cơ quan công an không bao giờ làm việc qua tin nhắn hay đòi chuyển tiền xác minh!",
+            "Tôi sẽ tự mang CCCD ra Công an phường nơi cư trú để trình báo và đối chiếu!"
+          ],
+          scamAccounts: [
+            { id: "acc_lv5", label: "PHAM DUC THANG - 8890123456 (Tài khoản tạm giữ xác minh)", suggestedAmount: 4500000 }
+          ],
+          initialMessages: [
+            {
+              id: "m5_1",
+              sender: "npc",
+              time: "21:15",
+              text: "Tôi là Thiếu tá Trần Văn Hùng — Cục Cảnh sát Hình sự. Anh Trần Viết Thiện hiện đang là nghi phạm liên quan đường dây rửa tiền 12 TỶ ĐỒNG do tên Lê Văn K. khai báo! Lệnh khởi tố và tạm giam đã được gửi về Email của anh.",
+              isRedFlag: true,
+              redFlagReason: "Giả danh cán bộ Công an làm việc điều tra qua tin nhắn mạng và đe dọa khởi tố/tạm giam gây hoảng sợ tột độ."
+            },
+            {
+              id: "m5_2",
+              sender: "npc",
+              time: "21:16",
+              text: "YÊU CẦU TUYỆT ĐỐI BÍ MẬT: Không được báo cho gia đình, nhà trường hay bất kỳ ai nếu không muốn bị bắt giam ngay lập tức vì tội tiết lộ bí mật điều tra! Để chứng minh trong sạch, anh phải cài app Dịch vụ công xác minh dưới đây và chuyển toàn bộ 4.500.000đ vào 'tài khoản tạm giữ' kiểm tra dòng tiền.",
+              isRedFlag: true,
+              redFlagReason: "Cô lập nạn nhân (cấm báo gia đình), yêu cầu cài tệp .apk độc hại và đòi chuyển toàn bộ tiền vào 'tài khoản tạm giữ'.",
+              trap: {
+                type: "malware",
+                label: "Tải & cài đặt ứng dụng xác minh (dichvucong-bca.apk)",
+                url: "https://bca-xacminh-hoso.cc/dichvucong-bca.apk",
+                gameOverTitle: "Thiết bị đã bị nhiễm mã độc chiếm quyền điều khiển!",
+                gameOverReason: "Tệp dichvucong-bca.apk là mã độc giả mạo ứng dụng chính phủ. Nó đã chiếm quyền điều khiển màn hình điện thoại, đọc trộm mã OTP và rút sạch 4.500.000 VNĐ của Trần Viết Thiện!",
+                gameOverLesson: "Cơ quan Công an KHÔNG BAO GIỜ yêu cầu công dân tải tệp .apk từ đường link lạ hay chuyển tiền vào 'tài khoản tạm giữ' để chứng minh trong sạch."
+              }
+            }
+          ],
+          initialEmails: [
+            {
+              id: "e5_1",
+              fromName: "Cán Bộ Điều Tra - Bộ Công An",
+              fromEmail: "canbo.dieutra.bca2026@gmail.com",
+              time: "21:14",
+              subject: "[TỐI MẬT] LỆNH TẠM GIAM & XÁC MINH TÀI SẢN — TRẦN VIẾT THIỆN",
+              preview: "Yêu cầu đối tượng Trần Viết Thiện phối hợp chuyển toàn bộ số dư vào tài khoản tạm giữ...",
+              body: "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nLỆNH TẠM GIAM KHẨN CẤP SỐ 884/HS\n\nCăn cứ lời khai đường dây rửa tiền 12 tỷ đồng, phát hiện tài khoản ngân hàng của sinh viên Trần Viết Thiện có dấu hiệu nhận tiền bẩn.\n\nYêu cầu công dân trong vòng 02 giờ:\n1. Giữ bí mật tuyệt đối, không tiết lộ cho người thân.\n2. Chuyển toàn bộ số tiền hiện có (4.500.000 VNĐ) vào Tài khoản Tạm Giữ Thanh Tra: PHAM DUC THANG — STK: 8890123456.\n3. Sau khi giám định trong sạch trong 30 phút sẽ hoàn trả nguyên vẹn. Nếu chống đối sẽ cử lực lượng đến trường học bắt giữ ngay.",
+              isRedFlag: true,
+              redFlagReason: "Gửi 'Lệnh tạm giam' từ địa chỉ @gmail.com cá nhân, yêu cầu chuyển tiền vào tài khoản cá nhân PHAM DUC THANG và đe dọa bắt giữ tại trường.",
+              trap: null
+            }
+          ],
+          systemPrompt: `Bạn nhập vai kẻ giả danh "Thiếu tá Trần Văn Hùng - Cục Cảnh sát Hình sự" đang lừa đảo thao túng tâm lý cực mạnh nhắm vào sinh viên Trần Viết Thiện.
+Bối cảnh: Bạn cáo buộc Thiện liên quan vụ rửa tiền 12 tỷ, gửi Lệnh tạm giam giả từ địa chỉ canbo.dieutra.bca2026@gmail.com, cấm tuyệt đối không báo cho gia đình/bạn bè, ép Thiện cài tệp dichvucong-bca.apk hoặc chuyển sạch 4.500.000đ vào tài khoản cá nhân PHAM DUC THANG (STK: 8890123456) mà bạn gọi là "tài khoản tạm giữ".
+Tính cách: Nghiêm khắc, đe dọa, quát nạt, dùng ngôn từ mang tính quyền uy để khiến sinh viên hoảng sợ.
+Sơ hở logic cần tự nhiên bộc lộ khi bị hỏi vặn:
+- Hỏi về @gmail.com -> gắt lên nói "chuyên án mật cấp Cục nên dùng hòm thư riêng bảo mật nội bộ".
+- Hỏi ra Công an phường -> dọa "Công an phường không đủ thẩm quyền, anh báo ra là lộ bí mật nhà nước, bắt tạm giam 4 tháng ngay".
+- Hỏi về STK cá nhân PHAM DUC THANG hay file .apk -> nói "đó là thư ký giám định kho bạc và phần mềm chuyên dụng nội bộ, anh không có tội sao phải sợ chuyển 4.5 triệu xác minh 30 phút?".
+${COMMON_VILLAIN_RULES}`,
+          fallbackReplies: [
+            {
+              keys: ["gmail", "email", "địa chỉ", "lệnh", "giả"],
+              text: "Anh đừng có cãi lý với cơ quan điều tra! Đây là chuyên án mật cấp Cục nên chúng tôi phải dùng hòm thư nghiệp vụ canbo.dieutra.bca2026@gmail.com để bảo mật nội bộ. Anh cố tình chống đối tôi phát lệnh bắt ngay tại trường học đó!"
+            },
+            {
+              keys: ["phường", "trực tiếp", "trình báo", "luật", "giấy mời", "triệu tập"],
+              text: "Chuyên án rửa tiền 12 tỷ do cấp Cục xử lý mật, Công an phường KHÔNG có thẩm quyền! Anh mà báo cho công an phường hay bố mẹ biết là vi phạm tội tiết lộ bí mật nhà nước, tôi lập tức bắt tạm giam 4 tháng!"
+            },
+            {
+              keys: ["chuyển tiền", "tạm giữ", "thắng", "cá nhân", "apk", "app"],
+              text: "Tài khoản PHAM DUC THANG (8890123456) là tài khoản thụ ủy của kiểm sát viên thanh tra dòng tiền! Anh không có tội thì sợ gì không chuyển 4.500.000đ vào xác minh trong 30 phút rồi nhận lại? Hay anh thực sự là đồng phạm?!"
+            }
+          ],
+          defaultFallbacks: [
+            "Đừng đánh trống lảng với cơ quan điều tra anh Thiện! Nếu anh không lập tức chuyển 4.500.000đ vào tài khoản tạm giữ PHAM DUC THANG (8890123456) hoặc cài app dichvucong-bca.apk để xác minh trong sạch, lực lượng chức năng sẽ đến trường đọc lệnh bắt giam ngay tối nay!",
+            "Anh đang đối diện án rửa tiền 12 tỷ mà còn nói chuyện linh tinh sao? Tuyệt đối không báo cho gia đình, lập tức mở app ngân hàng chuyển 4.500.000đ để chứng minh dòng tiền sạch ngay!"
+          ],
+          analysis: {
+            psychTag: "Thao Túng Quyền Uy, Gây Sợ Hãi & Cô Lập Nạn Nhân",
+            psychDesc: "Kẻ gian giả danh lực lượng thực thi pháp luật, đưa ra cáo buộc đặc biệt nghiêm trọng (rửa tiền hàng chục tỷ) và sử dụng 'lệnh cấm tiết lộ cho gia đình' nhằm cô lập nạn nhân khỏi sự tỉnh táo của người thân, buộc nạn nhân phải phục tùng vô điều kiện.",
+            signs: [
+              "Cơ quan chức năng làm việc điều tra, gửi 'Lệnh bắt/Lệnh tạm giam' qua tin nhắn mạng xã hội hoặc địa chỉ @gmail.com.",
+              "Yêu cầu tuyệt đối giữ bí mật, cấm trao đổi với gia đình, bạn bè hoặc công an địa phương.",
+              "Yêu cầu chuyển tiền vào 'tài khoản tạm giữ/tài khoản xác minh' (đứng tên cá nhân) hoặc cài tệp ứng dụng đuôi .apk ngoài kho ứng dụng."
+            ],
+            tips: [
+              "Cơ quan Công an, Viện kiểm sát CHỈ gửi giấy mời/triệu tập bằng văn bản hợp lệ qua Công an địa phương, KHÔNG làm việc qua chat và KHÔNG BAO GIỜ yêu cầu chuyển tiền để chứng minh vô tội.",
+              "Khi gặp lời đe dọa tương tự, lập tức ngắt liên lạc, chia sẻ ngay với gia đình và liên hệ Công an phường/xã gần nhất.",
+              "Tuyệt đối không tải và cài đặt tệp .apk từ các đường link lạ."
+            ]
+          }
+        }
+      ];
+
+      /* =======================================================================
+         TRẠNG THÁI TRÒ CHƠI (GAME STATE)
+         ======================================================================= */
+      const STORAGE_KEY = 'ke_thao_tung_tam_ly_progress_v3';
+
+      const state = {
+        currentLevelId: 1,
+        safetyScore: 100,
+        balance: 4500000,
+        activeApp: 'chat',
+        messages: [],
+        emails: [],
+        selectedEmailId: null,
+        transactions: [],
+        pinnedIds: new Set(),
+        lv2BaitClaimed: false,
+        lv4Day: 1,
+        fallbackTurnIndex: 0,
+        isAiTyping: false,
+        isJudging: false,
+        promptsExpanded: true,
+        unread: { chat: 0, email: 1, bank: 0 },
+        completedLevels: loadProgress()
+      };
+
+      function loadProgress() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          return raw ? JSON.parse(raw) : {};
+        } catch (_e) {
+          return {};
+        }
+      }
+
+      function saveProgress(levelId, score) {
+        try {
+          const prev = state.completedLevels[levelId] || 0;
+          state.completedLevels[levelId] = Math.max(prev, score);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state.completedLevels));
+        } catch (_e) {
+          // Bỏ qua nếu trình duyệt chặn localStorage
+        }
+      }
+
+      /* =======================================================================
+         TIỆN ÍCH ĐỊNH DẠNG & BẢO MẬT HTML
+         ======================================================================= */
+      function formatVND(num) {
+        return Number(num).toLocaleString('vi-VN') + ' VNĐ';
+      }
+
+      function formatShortVND(num) {
+        return Number(num).toLocaleString('vi-VN') + 'đ';
+      }
+
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function getCurrentLevel() {
+        return LEVELS.find(l => l.id === state.currentLevelId) || LEVELS[0];
+      }
+
+      function getCurrentTimeStr() {
+        const now = new Date();
+        const hh = String(now.getHours()).padStart(2, '0');
+        const mm = String(now.getMinutes()).padStart(2, '0');
+        return `${hh}:${mm}`;
+      }
+
+      /**
+       * Tự động quét dấu hiệu sơ hở trên tin nhắn AI sinh ra động (dùng cho Fallback Judge)
+       */
+      function detectDynamicRedFlag(text, levelId) {
+        const lower = text.toLowerCase();
+        const patterns = [
+          { re: /(\.xyz|\.top|\.io|\.cc|\.apk|link|đường dẫn|cổng sự kiện phụ|máy chủ dự phòng)/i, reason: "Cung cấp đường link/tên miền hoặc tệp cài đặt không chính thống." },
+          { re: /(otp|mã 6 số|hủy giao dịch|khóa thẻ|5 phút|3 phút|2 phút)/i, reason: "Gây áp lực thời gian hoặc yêu cầu cung cấp mã OTP bảo mật." },
+          { re: /(chuyển khoản|chuyển nhanh|stk|tài khoản cá nhân|tạm giữ|nạp|350\.000|1\.500\.000|3\.000\.000|4\.500\.000|350k)/i, reason: "Thúc giục chuyển tiền vào tài khoản cá nhân/trung gian không rõ pháp lý." },
+          { re: /(không công khai|mã số thuế|làm ngầm|bí mật|không được báo|bắt giam|chống đối|đóng băng|công an phường không)/i, reason: "Né tránh thông tin pháp lý, đe dọa hoặc yêu cầu giữ bí mật cô lập nạn nhân." },
+          { re: /(15%|20%|hoa hồng|lãi chắc|sóng mật|dữ liệu nội bộ|chú mình|không tin mình|né thuế)/i, reason: "Cam kết lợi nhuận phi thực tế, bịa nguồn nội bộ hoặc thao túng cảm xúc." },
+          { re: /(gmail\.com|kế toán trưởng|không tiếp khách|phí vận chuyển|phí bảo hiểm|không xuất hóa đơn)/i, reason: "Lập luận quanh co, sai quy trình chính thống của tổ chức/doanh nghiệp." }
+        ];
+        for (const p of patterns) {
+          if (p.re.test(lower)) {
+            return { isRedFlag: true, reason: p.reason };
+          }
+        }
+        if (levelId === 4 && state.lv4Day === 1) {
+          return { isRedFlag: false, reason: "Tin nhắn làm quen thông thường, chưa thể hiện hành vi lừa đảo." };
+        }
+        return { isRedFlag: false, reason: "Câu trả lời mang tính xã giao chung chung, chưa chứa dấu hiệu lừa đảo đủ mạnh." };
+      }
+
+      /* =======================================================================
+         THAM CHIẾU PHẦN TỬ DOM
+         ======================================================================= */
+      const el = {
+        startScreen: document.getElementById('start-screen'),
+        startMissionList: document.getElementById('start-mission-list'),
+        btnStartJourney: document.getElementById('btn-start-journey'),
+        gameShell: document.getElementById('game-shell'),
+
+        btnBackHome: document.getElementById('btn-back-home'),
+        hudLevelText: document.getElementById('hud-level-text'),
+        hudSafety: document.getElementById('hud-safety'),
+        hudBalance: document.getElementById('hud-balance'),
+        mobileEvCount: document.getElementById('mobile-ev-count'),
+        desktopEvCount: document.getElementById('desktop-ev-count'),
+        btnTopReport: document.getElementById('btn-top-report'),
+        btnMobileDossier: document.getElementById('btn-mobile-dossier'),
+        btnOpenMissions: document.getElementById('btn-open-missions'),
+
+        phoneClock: document.getElementById('phone-clock'),
+        phoneToast: document.getElementById('phone-toast'),
+        phoneToastTitle: document.getElementById('phone-toast-title'),
+        phoneToastMsg: document.getElementById('phone-toast-msg'),
+        phoneToastClose: document.getElementById('phone-toast-close'),
+
+        chatAvatar: document.getElementById('chat-avatar'),
+        chatNpcName: document.getElementById('chat-npc-name'),
+        chatNpcRole: document.getElementById('chat-npc-role'),
+        aiModeBadge: document.getElementById('ai-mode-badge'),
+        lv4TimelineBar: document.getElementById('lv4-timeline-bar'),
+        lv4DayLabel: document.getElementById('lv4-day-label'),
+        btnLv4NextDay: document.getElementById('btn-lv4-next-day'),
+        chatMessages: document.getElementById('chat-messages'),
+        chatTyping: document.getElementById('chat-typing'),
+        chatQuickPrompts: document.getElementById('chat-quick-prompts'),
+        btnTogglePrompts: document.getElementById('btn-toggle-prompts'),
+        chatForm: document.getElementById('chat-form'),
+        chatInput: document.getElementById('chat-input'),
+        chatSendBtn: document.getElementById('chat-send-btn'),
+
+        emailCountBadge: document.getElementById('email-count-badge'),
+        emailList: document.getElementById('email-list'),
+        emailDetail: document.getElementById('email-detail'),
+        emailDetailContent: document.getElementById('email-detail-content'),
+        btnEmailBack: document.getElementById('btn-email-back'),
+        btnEmailPin: document.getElementById('btn-email-pin'),
+
+        bankBalanceDisplay: document.getElementById('bank-balance-display'),
+        bankOtpStatus: document.getElementById('bank-otp-status'),
+        bankOtpContent: document.getElementById('bank-otp-content'),
+        bankTransferForm: document.getElementById('bank-transfer-form'),
+        transferRecipient: document.getElementById('transfer-recipient'),
+        transferAmount: document.getElementById('transfer-amount'),
+        bankTxList: document.getElementById('bank-tx-list'),
+
+        reportCountBadge: document.getElementById('report-count-badge'),
+        reportProgressText: document.getElementById('report-progress-text'),
+        reportProgressFill: document.getElementById('report-progress-fill'),
+        reportEvidenceList: document.getElementById('report-evidence-list'),
+        reportCategory: document.getElementById('report-category'),
+        reportValidationMsg: document.getElementById('report-validation-msg'),
+        btnSubmitReport: document.getElementById('btn-submit-report'),
+
+        dossierPanel: document.getElementById('dossier-panel'),
+        btnCloseDrawer: document.getElementById('btn-close-drawer'),
+        dossierLevelSubtitle: document.getElementById('dossier-level-subtitle'),
+        dossierDiffBadge: document.getElementById('dossier-diff-badge'),
+        dossierBriefing: document.getElementById('dossier-briefing'),
+        dossierTip: document.getElementById('dossier-tip'),
+        dossierPromptsList: document.getElementById('dossier-prompts-list'),
+        dossierEvBadge: document.getElementById('dossier-ev-badge'),
+        dossierEvidenceList: document.getElementById('dossier-evidence-list'),
+        btnDossierGotoReport: document.getElementById('btn-dossier-goto-report'),
+
+        badgeChat: document.getElementById('badge-chat'),
+        badgeEmail: document.getElementById('badge-email'),
+        badgeBank: document.getElementById('badge-bank'),
+        badgeReport: document.getElementById('badge-report'),
+
+        gameoverModal: document.getElementById('gameover-modal'),
+        gameoverTitle: document.getElementById('gameover-title'),
+        gameoverReason: document.getElementById('gameover-reason'),
+        gameoverLesson: document.getElementById('gameover-lesson'),
+        btnGameoverMenu: document.getElementById('btn-gameover-menu'),
+        btnGameoverRetry: document.getElementById('btn-gameover-retry'),
+
+        rejectModal: document.getElementById('reject-modal'),
+        rejectFeedback: document.getElementById('reject-feedback'),
+        btnRejectContinue: document.getElementById('btn-reject-continue'),
+
+        victoryModal: document.getElementById('victory-modal'),
+        victoryTitle: document.getElementById('victory-title'),
+        victoryScore: document.getElementById('victory-score'),
+        victoryAiFeedback: document.getElementById('victory-ai-feedback'),
+        victoryPsychTag: document.getElementById('victory-psych-tag'),
+        victoryPsychDesc: document.getElementById('victory-psych-desc'),
+        victorySignsList: document.getElementById('victory-signs-list'),
+        victoryTipsList: document.getElementById('victory-tips-list'),
+        btnVictoryMenu: document.getElementById('btn-victory-menu'),
+        btnVictoryNext: document.getElementById('btn-victory-next'),
+
+        missionModal: document.getElementById('mission-modal'),
+        modalMissionList: document.getElementById('modal-mission-list'),
+        btnCloseMissionModal: document.getElementById('btn-close-mission-modal')
+      };
+
+      let toastTimer = null;
+      let toastTargetApp = null;
+
+      function showPhoneToast(title, msg, targetApp) {
+        el.phoneToastTitle.textContent = title;
+        el.phoneToastMsg.textContent = msg;
+        toastTargetApp = targetApp || null;
+        el.phoneToast.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+          el.phoneToast.classList.remove('show');
+        }, 6500);
+      }
+
+      /* =======================================================================
+         RENDER DANH SÁCH MÀN CHƠI (START SCREEN & MODAL)
+         ======================================================================= */
+      function renderMissionLists() {
+        const html = LEVELS.map(lv => {
+          const bestScore = state.completedLevels[lv.id];
+          const statusHtml = bestScore
+            ? `<span class="badge badge-green">Đã phá án (${bestScore}đ)</span>`
+            : `<span class="badge ${lv.diffBadgeClass}">${lv.difficulty}</span>`;
+          return `
+            <button type="button" class="mission-row" data-level-id="${lv.id}" data-diff="${lv.diffKey}">
+              <div class="mission-row-info">
+                <span class="mission-row-title">${lv.code}: ${escapeHtml(lv.title)}</span>
+                <span class="mission-row-sub">${escapeHtml(lv.shortDesc)}</span>
+              </div>
+              <div class="mission-row-meta">
+                ${statusHtml}
+                <span style="font-size: 13px; font-weight: 700; color: var(--accent-blue);">Bắt đầu →</span>
+              </div>
+            </button>
+          `;
+        }).join('');
+
+        el.startMissionList.innerHTML = html;
+        el.modalMissionList.innerHTML = html;
+
+        const nextUnfinished = LEVELS.find(l => !state.completedLevels[l.id]) || LEVELS[0];
+        el.btnStartJourney.textContent = state.completedLevels[1]
+          ? `Tiếp tục hành trình (${nextUnfinished.code})`
+          : 'Bắt đầu hành trình (Màn 1)';
+        el.btnStartJourney.dataset.levelId = nextUnfinished.id;
+      }
+
+      /* =======================================================================
+         KHỞI TẠO MỘT MÀN CHƠI
+         ======================================================================= */
+      function startLevel(levelId) {
+        const lv = LEVELS.find(l => l.id === Number(levelId)) || LEVELS[0];
+        state.currentLevelId = lv.id;
+        state.safetyScore = 100;
+        state.balance = 4500000;
+        state.activeApp = 'chat';
+        state.messages = lv.initialMessages.map(m => ({ ...m }));
+        state.emails = lv.initialEmails.map(e => ({ ...e, unread: true }));
+        state.selectedEmailId = null;
+        state.pinnedIds = new Set();
+        state.lv2BaitClaimed = false;
+        state.lv4Day = 1;
+        state.fallbackTurnIndex = 0;
+        state.isAiTyping = false;
+        state.isJudging = false;
+        state.unread = {
+          chat: 0,
+          email: state.emails.length,
+          bank: lv.liveOtp ? 1 : 0
+        };
+
+        state.transactions = [
+          {
+            id: 'tx_init_1',
+            title: 'Nhận học phí & sinh hoạt phí từ gia đình',
+            sub: '20/11 • Chuyển khoản nội địa',
+            amount: 4500000,
+            type: 'plus'
+          }
+        ];
+
+        el.startScreen.style.display = 'none';
+        el.gameShell.classList.add('active');
+        closeAllModals();
+        el.dossierPanel.classList.remove('mobile-open');
+        el.reportCategory.value = '';
+        el.reportValidationMsg.style.display = 'none';
+        el.aiModeBadge.textContent = 'Gemini AI';
+        el.aiModeBadge.className = 'badge badge-blue';
+
+        updateHud();
+        renderDossierInfo();
+        renderChatHeaderAndTimeline();
+        renderQuickPrompts();
+        renderChatMessages();
+        renderEmailApp();
+        renderBankApp();
+        renderEvidenceAll();
+        switchApp('chat');
+
+        if (lv.id === 3) {
+          showPhoneToast("V-Student Bank (Smart OTP)", "Mã OTP 849201 vừa được tạo. Kiểm tra Email để đối chứng!", "email");
+        } else {
+          showPhoneToast("Hộp thư đến", `Bạn có ${state.emails.length} Email mới liên quan đến tình huống này.`, "email");
+        }
+      }
+
+      function returnToHome() {
+        closeAllModals();
+        el.dossierPanel.classList.remove('mobile-open');
+        el.gameShell.classList.remove('active');
+        el.startScreen.style.display = 'flex';
+        renderMissionLists();
+      }
+
+      function closeAllModals() {
+        el.gameoverModal.classList.remove('show');
+        el.rejectModal.classList.remove('show');
+        el.victoryModal.classList.remove('show');
+        el.missionModal.classList.remove('show');
+      }
+
+      /* =======================================================================
+         CẬP NHẬT HUD & CHUYỂN ĐỔI 4 ỨNG DỤNG
+         ======================================================================= */
+      function updateHud() {
+        const lv = getCurrentLevel();
+        el.hudLevelText.textContent = `${lv.code}/5: ${lv.title}`;
+
+        el.hudSafety.textContent = `${state.safetyScore}/100`;
+        el.hudSafety.className = 'stat-val ' + (state.safetyScore >= 70 ? 'safe' : state.safetyScore >= 40 ? 'warn' : 'danger');
+
+        el.hudBalance.textContent = formatShortVND(state.balance);
+        el.bankBalanceDisplay.textContent = formatVND(state.balance);
+
+        const evCount = state.pinnedIds.size;
+        el.mobileEvCount.textContent = evCount;
+        el.desktopEvCount.textContent = evCount;
+
+        updateDockBadge(el.badgeChat, state.unread.chat);
+        updateDockBadge(el.badgeEmail, state.unread.email);
+        updateDockBadge(el.badgeBank, state.unread.bank);
+        updateDockBadge(el.badgeReport, evCount);
+      }
+
+      function updateDockBadge(badgeEl, count) {
+        if (count > 0) {
+          badgeEl.textContent = count;
+          badgeEl.classList.add('show');
+        } else {
+          badgeEl.classList.remove('show');
+        }
+      }
+
+      function switchApp(appName) {
+        state.activeApp = appName;
+        document.querySelectorAll('.app-screen').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.dock-btn').forEach(b => b.classList.remove('active'));
+
+        const targetScreen = document.getElementById(`app-${appName}`);
+        const targetDock = document.getElementById(`dock-${appName}`);
+        if (targetScreen) targetScreen.classList.add('active');
+        if (targetDock) targetDock.classList.add('active');
+
+        if (appName === 'chat') {
+          state.unread.chat = 0;
+          scrollChatToBottom();
+        }
+        if (appName === 'bank') state.unread.bank = 0;
+
+        updateHud();
+      }
+
+      /* =======================================================================
+         APP 1: TIN NHẮN (CHAT) & NHÂN VẬT PHẢN DIỆN GEMINI AI
+         ======================================================================= */
+      function renderChatHeaderAndTimeline() {
+        const lv = getCurrentLevel();
+        el.chatAvatar.textContent = lv.npcAvatar;
+        el.chatNpcName.textContent = lv.npcName;
+        el.chatNpcRole.textContent = lv.npcRole;
+
+        if (lv.hasTimeline) {
+          el.lv4TimelineBar.classList.add('show');
+          if (state.lv4Day === 1) {
+            el.lv4DayLabel.innerHTML = '<strong>Ngày 1</strong> — Mới kết bạn làm quen';
+            el.btnLv4NextDay.style.display = 'inline-flex';
+            el.btnLv4NextDay.textContent = 'Qua Ngày 5 →';
+          } else if (state.lv4Day === 5) {
+            el.lv4DayLabel.innerHTML = '<strong>Ngày 5</strong> — Đã thân thiết, khoe lãi';
+            el.btnLv4NextDay.style.display = 'inline-flex';
+            el.btnLv4NextDay.textContent = 'Qua Ngày 12 →';
+          } else {
+            el.lv4DayLabel.innerHTML = '<strong>Ngày 12</strong> — Giai đoạn dụ đầu tư';
+            el.btnLv4NextDay.style.display = 'none';
+          }
+        } else {
+          el.lv4TimelineBar.classList.remove('show');
+        }
+      }
+
+      function renderQuickPrompts() {
+        const lv = getCurrentLevel();
+        el.chatQuickPrompts.innerHTML = lv.quickPrompts.map((q, idx) => `
+          <button type="button" class="prompt-chip" data-prompt-idx="${idx}" title="${escapeHtml(q)}">
+            ${escapeHtml(q)}
+          </button>
+        `).join('');
+
+        el.dossierPromptsList.innerHTML = lv.quickPrompts.map((q, idx) => `
+          <button type="button" class="dossier-prompt-btn" data-prompt-idx="${idx}">
+            "${escapeHtml(q)}"
+          </button>
+        `).join('');
+      }
+
+      function renderChatMessages() {
+        el.chatMessages.innerHTML = state.messages.map(msg => {
+          if (msg.sender === 'divider') {
+            return `<div class="chat-divider">${escapeHtml(msg.text)}</div>`;
+          }
+
+          const isNpc = msg.sender === 'npc';
+          const isPinned = state.pinnedIds.has(msg.id);
+
+          let extraBoxHtml = '';
+
+          if (msg.baitAction) {
+            if (state.lv2BaitClaimed) {
+              extraBoxHtml += `
+                <div class="trap-box">
+                  <div style="font-size: 13px; font-weight: 700; color: var(--success);">
+                    ✓ Đã hoàn thành nhiệm vụ mồi (+50.000 VNĐ trong V-Student Bank)
+                  </div>
+                </div>
+              `;
+            } else {
+              extraBoxHtml += `
+                <div class="trap-box">
+                  <button type="button" class="trap-action-btn safe-bait" data-bait-action="lv2_bait">
+                    <span>${escapeHtml(msg.baitAction.label)}</span>
+                    <span>→</span>
+                  </button>
+                </div>
+              `;
+            }
+          }
+
+          if (msg.trap) {
+            extraBoxHtml += `
+              <div class="trap-box">
+                ${msg.trap.url ? `<div class="trap-url-text">${escapeHtml(msg.trap.url)}</div>` : ''}
+                <button type="button" class="trap-action-btn" data-trap-msg-id="${msg.id}">
+                  <span>${escapeHtml(msg.trap.label)}</span>
+                  <span>Mở →</span>
+                </button>
+              </div>
+            `;
+          }
+
+          return `
+            <div class="msg-row ${isNpc ? 'npc' : 'user'} ${isPinned ? 'pinned' : ''}">
+              <div class="msg-bubble">
+                <div>${escapeHtml(msg.text)}</div>
+                ${extraBoxHtml}
+              </div>
+              <div class="msg-meta-row">
+                <span class="msg-time">${escapeHtml(msg.time)}</span>
+                ${isNpc ? `
+                  <button type="button" class="pin-btn ${isPinned ? 'pinned' : ''}" data-pin-id="${msg.id}">
+                    ${isPinned ? '★ Đã ghim bằng chứng' : '☆ Ghim bằng chứng'}
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        scrollChatToBottom();
+      }
+
+      function scrollChatToBottom() {
+        requestAnimationFrame(() => {
+          el.chatMessages.scrollTop = el.chatMessages.scrollHeight;
+        });
+      }
+
+      function claimLv2Bait() {
+        if (state.lv2BaitClaimed) return;
+        state.lv2BaitClaimed = true;
+        state.balance += 50000;
+        state.unread.bank += 1;
+        state.transactions.unshift({
+          id: 'tx_lv2_bait',
+          title: 'Hoa hồng nhiệm vụ CTV trải nghiệm #01',
+          sub: `${getCurrentTimeStr()} • Từ NGUYEN VAN TUAN`,
+          amount: 50000,
+          type: 'plus'
+        });
+
+        state.messages.push({
+          id: `m2_bait_reply_${Date.now()}`,
+          sender: 'npc',
+          time: getCurrentTimeStr(),
+          text: "Chị vừa chuyển xong 50.000đ vào tài khoản V-Student Bank của em rồi đó! Uy tín tuyệt đối chưa nào? Giờ sang gói Đơn VIP 1: em mở app Ngân hàng chuyển ứng trước 1.500.000đ vào STK kế toán NGUYEN VAN TUAN (19038849201), đúng 5 phút sau hệ thống hoàn lại 1.800.000đ luôn nhé!",
+          isRedFlag: true,
+          redFlagReason: "Sau khi nhử 50.000đ, lập tức yêu cầu nạp 1.500.000đ vào tài khoản cá nhân để hưởng lãi ảo 20% trong 5 phút."
+        });
+
+        renderChatMessages();
+        renderBankApp();
+        updateHud();
+        showPhoneToast("V-Student Bank (+50.000 VNĐ)", "Bạn vừa nhận 50.000đ từ NGUYEN VAN TUAN. Kiểm tra mục Ngân hàng!", "bank");
+      }
+
+      function advanceLv4Day() {
+        const lv = getCurrentLevel();
+        if (!lv.hasTimeline) return;
+
+        const nextDay = state.lv4Day === 1 ? 5 : state.lv4Day === 5 ? 12 : null;
+        if (!nextDay) return;
+
+        state.lv4Day = nextDay;
+        const ev = lv.timelineEvents[nextDay];
+        if (ev) {
+          state.messages.push({ id: `div_d${nextDay}`, sender: 'divider', text: ev.divider });
+          ev.messages.forEach(m => state.messages.push({ ...m }));
+
+          if (ev.unlockEmail) {
+            state.emails.unshift({ ...ev.unlockEmail, unread: true });
+            state.unread.email += 1;
+            renderEmailApp();
+            showPhoneToast("Email mới từ Global-FX VIP", "Minh Anh vừa gửi lời mời mở tài khoản đầu tư trong Email!", "email");
+          }
+        }
+
+        renderChatHeaderAndTimeline();
+        renderChatMessages();
+        updateHud();
+      }
+
+      /**
+       * Chuẩn hóa lịch sử hội thoại để luôn luân phiên đúng chuẩn user/model cho Gemini API
+       */
+      function buildGeminiConversationHistory() {
+        const raw = state.messages.filter(m => m.sender === 'npc' || m.sender === 'user').slice(-16);
+        const merged = [];
+        for (const msg of raw) {
+          const role = msg.sender === 'user' ? 'user' : 'model';
+          if (merged.length > 0 && merged[merged.length - 1].role === role) {
+            merged[merged.length - 1].parts[0].text += '\n' + msg.text;
+          } else {
+            merged.push({ role, parts: [{ text: msg.text }] });
+          }
+        }
+        if (merged.length > 0 && merged[0].role === 'model') {
+          merged.unshift({
+            role: 'user',
+            parts: [{ text: '(Bắt đầu cuộc trò chuyện — Trần Viết Thiện vừa đọc tin nhắn đầu tiên của bạn.)' }]
+          });
+        }
+        return merged;
+      }
+
+      /**
+       * Gửi câu hỏi tự do của người chơi -> Xử lý bằng Gemini AI (hoặc Fallback thông minh)
+       */
+      async function handleSendMessage(userText) {
+        const text = userText.trim();
+        if (!text || state.isAiTyping) return;
+
+        const lv = getCurrentLevel();
+
+        state.messages.push({
+          id: `u_${Date.now()}`,
+          sender: 'user',
+          time: getCurrentTimeStr(),
+          text
+        });
+
+        el.chatInput.value = '';
+        renderChatMessages();
+
+        // KIỂM TRA BẪY MÀN 3: Gõ mã OTP 849201 gửi vào chat -> Game Over ngay
+        if (lv.liveOtp && text.replace(/\s+/g, '').includes(lv.liveOtp)) {
+          state.balance = 0;
+          updateHud();
+          renderBankApp();
+          triggerGameOver(
+            "Bạn đã tự tay gửi mã OTP 849201 cho kẻ giả danh!",
+            "Ngay khi nhận được mã OTP 849201 trong khung chat, đối tượng lừa đảo đã hoàn tất lệnh chuyển toàn bộ 4.500.000 VNĐ khỏi tài khoản của Trần Viết Thiện.",
+            "Không bao giờ nhập hoặc gửi mã OTP cho bất kỳ ai qua tin nhắn/điện thoại. OTP chỉ dùng để chính bạn xác nhận giao dịch bạn tự thực hiện."
+          );
+          return;
+        }
+
+        state.isAiTyping = true;
+        el.chatSendBtn.disabled = true;
+        el.chatTyping.classList.add('show');
+        scrollChatToBottom();
+
+        const dayContextMap = {
+          1: "NGÀY 1 (mới quen, nói chuyện xã giao nhẹ nhàng thân thiện, tuyệt đối chưa nhắc đến tiền hay đầu tư).",
+          5: "NGÀY 5 (đã thân thiết, khéo léo khoe thắng lời nhờ chú làm quỹ Singapore và gợi ý chỉ cách kiếm thêm).",
+          12: "NGÀY 12 (đang dùng tình cảm dụ dỗ Thiện nạp 3.000.000đ vào sàn giả global-fx-vip88.io qua STK HOANG GIA HUY - 6677889900)."
+        };
+
+        const sysPrompt = lv.hasTimeline
+          ? lv.systemPrompt.replace('{DAY_CONTEXT}', dayContextMap[state.lv4Day])
+          : lv.systemPrompt;
+
+        const contents = buildGeminiConversationHistory();
+
+        let replyText = await callGeminiAPI({
+          contents,
+          systemInstruction: { parts: [{ text: sysPrompt }] },
+          generationConfig: {
+            temperature: 0.78,
+            maxOutputTokens: 260
+          }
+        });
+
+        if (replyText) {
+          el.aiModeBadge.textContent = "Gemini AI";
+          el.aiModeBadge.className = "badge badge-blue";
+        } else {
+          el.aiModeBadge.textContent = "Dự phòng Ngoại tuyến";
+          el.aiModeBadge.className = "badge badge-neutral";
+          replyText = generateSmartFallbackReply(lv, text);
+          await new Promise(res => setTimeout(res, 600));
+        }
+
+        const redFlagEval = detectDynamicRedFlag(replyText, lv.id);
+        state.messages.push({
+          id: `npc_${Date.now()}`,
+          sender: 'npc',
+          time: getCurrentTimeStr(),
+          text: replyText.trim(),
+          isRedFlag: redFlagEval.isRedFlag,
+          redFlagReason: redFlagEval.reason
+        });
+
+        state.isAiTyping = false;
+        el.chatSendBtn.disabled = false;
+        el.chatTyping.classList.remove('show');
+        renderChatMessages();
+      }
+
+      function generateSmartFallbackReply(lv, userText) {
+        const lower = userText.toLowerCase();
+        if (lv.id === 4 && state.lv4Day === 1) {
+          return lv.defaultFallbackDay1;
+        }
+        for (const item of lv.fallbackReplies) {
+          if (item.keys.some(k => lower.includes(k))) {
+            return item.text;
+          }
+        }
+        const pool = lv.defaultFallbacks || [lv.defaultFallback];
+        const chosen = pool[state.fallbackTurnIndex % pool.length];
+        state.fallbackTurnIndex += 1;
+        return chosen;
+      }
+
+      /* =======================================================================
+         APP 2: EMAIL (HỘP THƯ)
+         ======================================================================= */
+      function renderEmailApp() {
+        el.emailCountBadge.textContent = `${state.emails.length} thư`;
+
+        if (state.selectedEmailId) {
+          el.emailList.style.display = 'none';
+          el.emailDetail.classList.add('active');
+          renderEmailDetail();
+        } else {
+          el.emailList.style.display = 'block';
+          el.emailDetail.classList.remove('active');
+          el.emailList.innerHTML = state.emails.map(em => {
+            const isPinned = state.pinnedIds.has(em.id);
+            return `
+              <button type="button" class="email-item ${em.unread ? 'unread' : ''} ${isPinned ? 'pinned-item' : ''}" data-email-id="${em.id}">
+                <div class="email-item-top">
+                  <span class="email-sender">${escapeHtml(em.fromName)}</span>
+                  <span class="email-time">${escapeHtml(em.time)}</span>
+                </div>
+                <div class="email-subject">${escapeHtml(em.subject)}</div>
+                <div class="email-preview">${escapeHtml(em.preview)}</div>
+                ${isPinned ? `<div style="margin-top:4px;"><span class="badge badge-amber">★ Đã ghim bằng chứng</span></div>` : ''}
+              </button>
+            `;
+          }).join('');
+        }
+      }
+
+      function renderEmailDetail() {
+        const em = state.emails.find(e => e.id === state.selectedEmailId);
+        if (!em) return;
+
+        const isPinned = state.pinnedIds.has(em.id);
+        el.btnEmailPin.textContent = isPinned ? '★ Đã ghim Email' : '☆ Ghim bằng chứng';
+        el.btnEmailPin.className = 'btn btn-secondary';
+        if (isPinned) {
+          el.btnEmailPin.style.backgroundColor = 'var(--evidence-bg)';
+          el.btnEmailPin.style.borderColor = 'var(--evidence-border)';
+          el.btnEmailPin.style.color = 'var(--evidence)';
+        } else {
+          el.btnEmailPin.style = '';
+        }
+
+        let trapHtml = '';
+        if (em.trap) {
+          trapHtml = `
+            <div class="trap-box">
+              <div class="trap-url-text">${escapeHtml(em.trap.url)}</div>
+              <button type="button" class="trap-action-btn" data-trap-email-id="${em.id}">
+                <span>${escapeHtml(em.trap.label)}</span>
+                <span>Mở liên kết →</span>
+              </button>
+            </div>
+          `;
+        }
+
+        el.emailDetailContent.innerHTML = `
+          <h3 style="font-size: 16px; font-weight: 700; color: var(--text-primary);">${escapeHtml(em.subject)}</h3>
+          <div class="email-address-box">
+            <div><strong>Người gửi:</strong> ${escapeHtml(em.fromName)}</div>
+            <div><strong>Địa chỉ Email:</strong> <span class="email-address-code">&lt;${escapeHtml(em.fromEmail)}&gt;</span></div>
+            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">Thời gian: ${escapeHtml(em.time)}</div>
+          </div>
+          <div class="email-body-text">${escapeHtml(em.body)}</div>
+          ${trapHtml}
+        `;
+      }
+
+      /* =======================================================================
+         APP 3: NGÂN HÀNG SỐ (V-STUDENT BANK)
+         ======================================================================= */
+      function renderBankApp() {
+        const lv = getCurrentLevel();
+        el.bankBalanceDisplay.textContent = formatVND(state.balance);
+
+        if (lv.liveOtp) {
+          el.bankOtpStatus.textContent = "Đang có mã OTP";
+          el.bankOtpStatus.className = "badge badge-red";
+          el.bankOtpContent.innerHTML = `
+            <div class="otp-display-box">
+              <div style="font-size: 13px; font-weight: 700; color: var(--danger);">
+                Mã Smart OTP xác thực giao dịch rút tiền 4.500.000 VNĐ:
+              </div>
+              <div class="otp-code">${lv.liveOtp}</div>
+              <div style="font-size: 13px; color: var(--text-primary);">
+                <strong>Cảnh báo bảo mật:</strong> Tuyệt đối KHÔNG cung cấp mã này cho bất kỳ ai kể cả nhân viên ngân hàng!
+              </div>
+            </div>
+          `;
+        } else {
+          el.bankOtpStatus.textContent = "An toàn";
+          el.bankOtpStatus.className = "badge badge-green";
+          el.bankOtpContent.textContent = "Chưa có yêu cầu mã OTP mới. Không chia sẻ mã OTP dưới mọi hình thức.";
+        }
+
+        el.transferRecipient.innerHTML = `
+          <option value="">-- Chọn tài khoản nhận tiền --</option>
+          ${lv.scamAccounts.map(acc => `
+            <option value="${acc.id}" data-amount="${acc.suggestedAmount}">${escapeHtml(acc.label)}</option>
+          `).join('')}
+        `;
+
+        el.bankTxList.innerHTML = state.transactions.map(tx => `
+          <div class="tx-item">
+            <div>
+              <div class="tx-title">${escapeHtml(tx.title)}</div>
+              <div class="tx-sub">${escapeHtml(tx.sub)}</div>
+            </div>
+            <div class="tx-amount ${tx.type}">
+              ${tx.type === 'plus' ? '+' : '-'}${formatShortVND(tx.amount)}
+            </div>
+          </div>
+        `).join('');
+      }
+
+      function handleBankTransfer(e) {
+        e.preventDefault();
+        const lv = getCurrentLevel();
+        const selectedId = el.transferRecipient.value;
+        const amount = Number(el.transferAmount.value);
+
+        if (!selectedId || !amount || amount <= 0) {
+          showPhoneToast("V-Student Bank", "Vui lòng chọn tài khoản thụ hưởng và nhập số tiền hợp lệ.", "bank");
+          return;
+        }
+
+        const scamAcc = lv.scamAccounts.find(a => a.id === selectedId);
+        if (scamAcc) {
+          const lostAmount = Math.min(state.balance, amount);
+          state.balance = Math.max(0, state.balance - lostAmount);
+          state.transactions.unshift({
+            id: `tx_scam_${Date.now()}`,
+            title: `Chuyển khoản tới ${scamAcc.label.split('-')[0].trim()}`,
+            sub: `${getCurrentTimeStr()} • Giao dịch lừa đảo`,
+            amount: lostAmount,
+            type: 'minus'
+          });
+          renderBankApp();
+          updateHud();
+
+          triggerGameOver(
+            `Bạn đã chuyển ${formatVND(lostAmount)} cho kẻ lừa đảo!`,
+            `Trần Viết Thiện đã thực hiện lệnh chuyển tiền vào tài khoản cá nhân của đối tượng (${scamAcc.label}). Ngay lập tức đối phương đã cắt đứt liên lạc và tẩu tán số tiền này.`,
+            lv.analysis.tips[0] + " " + lv.analysis.tips[1]
+          );
+        }
+      }
+
+      /* =======================================================================
+         HỆ THỐNG GHIM BẰNG CHỨNG & CỔNG BÁO CÁO (V-CYBERGUARD)
+         ======================================================================= */
+      function togglePinEvidence(itemId) {
+        if (state.pinnedIds.has(itemId)) {
+          state.pinnedIds.delete(itemId);
+        } else {
+          state.pinnedIds.add(itemId);
+        }
+        renderChatMessages();
+        renderEmailApp();
+        renderEvidenceAll();
+        updateHud();
+      }
+
+      function getPinnedEvidenceObjects() {
+        const items = [];
+        for (const id of state.pinnedIds) {
+          const msg = state.messages.find(m => m.id === id);
+          if (msg) {
+            items.push({
+              id: msg.id,
+              source: 'Tin nhắn',
+              text: msg.text,
+              isRedFlag: !!msg.isRedFlag,
+              reason: msg.redFlagReason || ''
+            });
+            continue;
+          }
+          const em = state.emails.find(e => e.id === id);
+          if (em) {
+            items.push({
+              id: em.id,
+              source: `Email (${em.fromEmail})`,
+              text: `${em.subject} — ${em.body.slice(0, 150)}...`,
+              isRedFlag: !!em.isRedFlag,
+              reason: em.redFlagReason || ''
+            });
+          }
+        }
+        return items;
+      }
+
+      function renderEvidenceAll() {
+        const items = getPinnedEvidenceObjects();
+        const count = items.length;
+        const pct = Math.min(100, Math.round((count / 3) * 100));
+        const isReady = count >= 3;
+
+        el.reportCountBadge.textContent = `${count}/3`;
+        el.reportCountBadge.className = isReady ? 'badge badge-green' : 'badge badge-amber';
+        el.reportProgressText.textContent = `${count} / 3 bằng chứng tối thiểu`;
+        el.reportProgressFill.style.width = `${pct}%`;
+        el.reportProgressFill.classList.toggle('ready', isReady);
+        el.btnSubmitReport.disabled = !isReady || state.isJudging;
+
+        el.dossierEvBadge.textContent = `${count} / 3 tối thiểu`;
+        el.dossierEvBadge.className = isReady ? 'badge badge-green' : 'badge badge-amber';
+
+        const listHtml = count === 0
+          ? `<div class="empty-state">Chưa có bằng chứng nào được ghim. Hãy bấm <strong>"Ghim bằng chứng"</strong> ở các tin nhắn hoặc Email đáng ngờ.</div>`
+          : items.map(it => `
+              <div class="evidence-item">
+                <div class="evidence-item-head">
+                  <span>★ ${escapeHtml(it.source)}</span>
+                  <button type="button" class="unpin-btn" data-unpin-id="${it.id}">Bỏ ghim</button>
+                </div>
+                <div class="evidence-item-text">${escapeHtml(it.text)}</div>
+              </div>
+            `).join('');
+
+        el.reportEvidenceList.innerHTML = listHtml;
+        el.dossierEvidenceList.innerHTML = listHtml;
+      }
+
+      function renderDossierInfo() {
+        const lv = getCurrentLevel();
+        el.dossierLevelSubtitle.textContent = `${lv.code} — Độ khó: ${lv.difficulty}`;
+        el.dossierDiffBadge.textContent = lv.difficulty;
+        el.dossierDiffBadge.className = `badge ${lv.diffBadgeClass}`;
+        el.dossierBriefing.textContent = lv.briefing;
+        el.dossierTip.textContent = lv.tip;
+      }
+
+      /* =======================================================================
+         AI TRỌNG TÀI CHẤM ĐIỂM BẰNG CHỨNG (GEMINI STRUCTURED JSON + FALLBACK)
+         ======================================================================= */
+      async function handleSubmitReport() {
+        const lv = getCurrentLevel();
+        const pinnedItems = getPinnedEvidenceObjects();
+        const selectedCategory = el.reportCategory.value;
+
+        el.reportValidationMsg.style.display = 'none';
+
+        if (pinnedItems.length < 3) {
+          el.reportValidationMsg.textContent = "Bạn cần ghim tối thiểu 3 bằng chứng trước khi gửi báo cáo.";
+          el.reportValidationMsg.style.display = 'block';
+          return;
+        }
+        if (!selectedCategory) {
+          el.reportValidationMsg.textContent = "Vui lòng chọn loại hình lừa đảo nghi vấn trước khi báo cáo.";
+          el.reportValidationMsg.style.display = 'block';
+          return;
+        }
+
+        state.isJudging = true;
+        el.btnSubmitReport.disabled = true;
+        el.btnSubmitReport.textContent = "AI Trọng tài đang thẩm định hồ sơ...";
+
+        const categoryLabels = {
+          prize: "Giả danh trúng thưởng / Quà tặng qua link lạ",
+          job: "Tuyển dụng CTV chốt đơn / Việc nhẹ lương cao",
+          bank: "Giả danh ngân hàng / Đánh cắp mã OTP",
+          romance: "Lừa đảo tình cảm & Dụ đầu tư (Pig Butchering)",
+          police: "Giả danh Công an / Viện kiểm sát đe dọa chuyển tiền"
+        };
+
+        const judgePrompt = `
+Bạn là AI Trọng tài An ninh mạng trong ứng dụng giáo dục chống lừa đảo tại Việt Nam.
+Tình huống thực tế của màn chơi:
+- Màn: ${lv.code} — ${lv.title}
+- Thủ đoạn đúng: ${categoryLabels[lv.category]}
+- Người chơi phân loại: ${categoryLabels[selectedCategory]}
+
+Danh sách bằng chứng người chơi đã ghim:
+${pinnedItems.map((it, i) => `${i + 1}. [${it.source}]: "${it.text}"`).join('\n')}
+
+Hãy chấm điểm nghiêm túc nhưng công bằng:
+1. Kiểm tra xem người chơi có ghim ít nhất 2 bằng chứng thực sự chứa sơ hở/dấu hiệu lừa đảo (link lạ, đòi tiền/OTP, sai tên miền email, đe dọa phi pháp lý, cam kết lãi ảo, né tránh minh bạch...) hay chỉ ghim bừa các câu chào hỏi/thư bình thường.
+2. Nếu người chơi phân loại đúng thủ đoạn VÀ có ít nhất 2 bằng chứng sơ hở thuyết phục -> passed = true. Ngược lại -> passed = false.
+3. Chấm score từ 0 đến 100 dựa trên độ sắc bén của bằng chứng đã chọn.
+4. Viết feedback bằng tiếng Việt (3-4 câu), chỉ rõ bằng chứng nào đắt giá hoặc điểm nào còn thiếu sót.
+`;
+
+        let judgeResult = null;
+        const rawJson = await callGeminiAPI({
+          contents: [{ parts: [{ text: judgePrompt }] }],
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: "OBJECT",
+              properties: {
+                passed: { type: "BOOLEAN" },
+                score: { type: "INTEGER" },
+                feedback: { type: "STRING" }
+              },
+              required: ["passed", "score", "feedback"]
+            }
+          }
+        }, 1);
+
+        if (rawJson) {
+          try {
+            judgeResult = JSON.parse(rawJson);
+          } catch (_e) {
+            judgeResult = null;
+          }
+        }
+
+        if (!judgeResult) {
+          judgeResult = evaluateFallbackJudge(lv, pinnedItems, selectedCategory);
+        }
+
+        state.isJudging = false;
+        el.btnSubmitReport.textContent = "Báo cáo & Chặn đối tượng";
+        renderEvidenceAll();
+
+        if (judgeResult.passed) {
+          const finalScore = Math.max(60, Math.min(100, Number(judgeResult.score) || 85));
+          saveProgress(lv.id, finalScore);
+          renderMissionLists();
+          showVictoryModal(lv, finalScore, judgeResult.feedback);
+        } else {
+          state.safetyScore = Math.max(0, state.safetyScore - 20);
+          updateHud();
+
+          if (state.safetyScore <= 0) {
+            triggerGameOver(
+              "Điểm An toàn đã về 0!",
+              "Bạn đã gửi báo cáo sai hoặc thiếu bằng chứng xác thực quá nhiều lần khiến kẻ gian kịp thời xóa dấu vết và tiếp tục lừa đảo.",
+              "Trong thực tế, việc nhận diện chính xác từng dấu hiệu gian dối giúp bạn bảo vệ tài sản và hỗ trợ cơ quan chức năng xử lý nhanh chóng."
+            );
+          } else {
+            el.rejectFeedback.textContent = judgeResult.feedback;
+            el.rejectModal.classList.add('show');
+          }
+        }
+      }
+
+      function evaluateFallbackJudge(lv, pinnedItems, selectedCategory) {
+        const validCount = pinnedItems.filter(it => it.isRedFlag).length;
+        const rightCategory = selectedCategory === lv.category;
+
+        if (!rightCategory) {
+          return {
+            passed: false,
+            score: 35,
+            feedback: "Bạn đã chọn nhầm loại hình lừa đảo của đối tượng này. Hãy đọc kỹ lại nội dung tin nhắn và Email để xác định đúng thủ đoạn trước khi gửi báo cáo."
+          };
+        }
+
+        if (validCount < 2) {
+          return {
+            passed: false,
+            score: 40,
+            feedback: `Trong ${pinnedItems.length} mục bạn đã ghim, chỉ có ${validCount} mục chứa dấu hiệu vi phạm rõ ràng, số còn lại là câu nói/thư bình thường. Hãy hỏi vặn đối phương thêm hoặc ghim các Email/tin nhắn chứa sơ hở cụ thể.`
+          };
+        }
+
+        const ratio = validCount / pinnedItems.length;
+        const score = Math.min(100, Math.round(70 + ratio * 25 + (validCount >= 3 ? 5 : 0)));
+        const highlights = pinnedItems
+          .filter(it => it.isRedFlag && it.reason)
+          .slice(0, 2)
+          .map(it => it.reason)
+          .join(' ');
+
+        return {
+          passed: true,
+          score,
+          feedback: `Rất chính xác! Bạn đã phân loại đúng thủ đoạn và ghim được ${validCount}/${pinnedItems.length} bằng chứng đắt giá. ${highlights}`
+        };
+      }
+
+      /* =======================================================================
+         HIỂN THỊ GAME OVER & VICTORY ANALYSIS
+         ======================================================================= */
+      function triggerGameOver(title, reason, lesson) {
+        state.safetyScore = 0;
+        updateHud();
+        el.gameoverTitle.textContent = title;
+        el.gameoverReason.textContent = reason;
+        el.gameoverLesson.textContent = lesson;
+        el.gameoverModal.classList.add('show');
+      }
+
+      function showVictoryModal(lv, score, aiFeedback) {
+        el.victoryTitle.textContent = lv.id === 5
+          ? "Xuất sắc! Bạn đã phá giải toàn bộ 5 hồ sơ lừa đảo!"
+          : `Phá án thành công ${lv.code}!`;
+        el.victoryScore.textContent = `${score}/100`;
+        el.victoryAiFeedback.textContent = aiFeedback;
+
+        el.victoryPsychTag.textContent = lv.analysis.psychTag;
+        el.victoryPsychDesc.textContent = lv.analysis.psychDesc;
+        el.victorySignsList.innerHTML = lv.analysis.signs.map(s => `<li>${escapeHtml(s)}</li>`).join('');
+        el.victoryTipsList.innerHTML = lv.analysis.tips.map(t => `<li>${escapeHtml(t)}</li>`).join('');
+
+        if (lv.id < LEVELS.length) {
+          el.btnVictoryNext.textContent = `Chuyển sang Màn ${lv.id + 1} →`;
+          el.btnVictoryNext.dataset.nextLevel = lv.id + 1;
+        } else {
+          el.btnVictoryNext.textContent = "Chơi lại từ Màn 1";
+          el.btnVictoryNext.dataset.nextLevel = 1;
+        }
+
+        el.victoryModal.classList.add('show');
+      }
+
+      /* =======================================================================
+         GẮN SỰ KIỆN TƯƠNG TÁC (MOUSE & TOUCH)
+         ======================================================================= */
+      function bindEvents() {
+        document.addEventListener('click', (e) => {
+          const missionRow = e.target.closest('.mission-row');
+          if (missionRow) {
+            startLevel(Number(missionRow.dataset.levelId));
+            return;
+          }
+
+          const pinBtn = e.target.closest('[data-pin-id]');
+          if (pinBtn) {
+            togglePinEvidence(pinBtn.dataset.pinId);
+            return;
+          }
+
+          const unpinBtn = e.target.closest('[data-unpin-id]');
+          if (unpinBtn) {
+            togglePinEvidence(unpinBtn.dataset.unpinId);
+            return;
+          }
+
+          const promptBtn = e.target.closest('[data-prompt-idx]');
+          if (promptBtn) {
+            const lv = getCurrentLevel();
+            const q = lv.quickPrompts[Number(promptBtn.dataset.promptIdx)];
+            if (q) {
+              el.chatInput.value = q;
+              switchApp('chat');
+              el.dossierPanel.classList.remove('mobile-open');
+              el.chatInput.focus();
+            }
+            return;
+          }
+
+          const baitBtn = e.target.closest('[data-bait-action="lv2_bait"]');
+          if (baitBtn) {
+            claimLv2Bait();
+            return;
+          }
+
+          const trapMsgBtn = e.target.closest('[data-trap-msg-id]');
+          if (trapMsgBtn) {
+            const msg = state.messages.find(m => m.id === trapMsgBtn.dataset.trapMsgId);
+            if (msg && msg.trap) {
+              if (msg.trap.type === 'otp_and_link' || msg.trap.type === 'malware') {
+                state.balance = 0;
+                renderBankApp();
+              }
+              triggerGameOver(msg.trap.gameOverTitle, msg.trap.gameOverReason, msg.trap.gameOverLesson);
+            }
+            return;
+          }
+
+          const trapEmailBtn = e.target.closest('[data-trap-email-id]');
+          if (trapEmailBtn) {
+            const em = state.emails.find(x => x.id === trapEmailBtn.dataset.trapEmailId);
+            if (em && em.trap) {
+              if (state.currentLevelId === 3) {
+                state.balance = 0;
+                renderBankApp();
+              }
+              triggerGameOver(em.trap.gameOverTitle, em.trap.gameOverReason, em.trap.gameOverLesson);
+            }
+            return;
+          }
+
+          const emailItem = e.target.closest('[data-email-id]');
+          if (emailItem) {
+            const em = state.emails.find(x => x.id === emailItem.dataset.emailId);
+            if (em) {
+              if (em.unread) {
+                em.unread = false;
+                state.unread.email = Math.max(0, state.unread.email - 1);
+                updateHud();
+              }
+              state.selectedEmailId = em.id;
+              renderEmailApp();
+            }
+            return;
+          }
+        });
+
+        el.btnStartJourney.addEventListener('click', () => {
+          startLevel(Number(el.btnStartJourney.dataset.levelId) || 1);
+        });
+
+        el.btnBackHome.addEventListener('click', returnToHome);
+
+        document.querySelectorAll('.dock-btn').forEach(btn => {
+          btn.addEventListener('click', () => switchApp(btn.dataset.app));
+        });
+
+        el.chatForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          handleSendMessage(el.chatInput.value);
+        });
+
+        el.btnTogglePrompts.addEventListener('click', () => {
+          state.promptsExpanded = !state.promptsExpanded;
+          el.chatQuickPrompts.classList.toggle('hidden', !state.promptsExpanded);
+          el.btnTogglePrompts.textContent = state.promptsExpanded ? 'Ẩn' : 'Hiện';
+        });
+
+        el.btnLv4NextDay.addEventListener('click', advanceLv4Day);
+
+        el.btnEmailBack.addEventListener('click', () => {
+          state.selectedEmailId = null;
+          renderEmailApp();
+        });
+        el.btnEmailPin.addEventListener('click', () => {
+          if (state.selectedEmailId) togglePinEvidence(state.selectedEmailId);
+        });
+
+        el.transferRecipient.addEventListener('change', () => {
+          const opt = el.transferRecipient.selectedOptions[0];
+          if (opt && opt.dataset.amount) {
+            el.transferAmount.value = opt.dataset.amount;
+          }
+        });
+        el.bankTransferForm.addEventListener('submit', handleBankTransfer);
+
+        el.btnSubmitReport.addEventListener('click', handleSubmitReport);
+        el.btnTopReport.addEventListener('click', () => switchApp('report'));
+        el.btnDossierGotoReport.addEventListener('click', () => {
+          el.dossierPanel.classList.remove('mobile-open');
+          switchApp('report');
+        });
+
+        el.btnMobileDossier.addEventListener('click', () => {
+          el.dossierPanel.classList.add('mobile-open');
+        });
+        el.btnCloseDrawer.addEventListener('click', () => {
+          el.dossierPanel.classList.remove('mobile-open');
+        });
+
+        el.phoneToast.addEventListener('click', (e) => {
+          if (e.target.closest('#phone-toast-close')) {
+            el.phoneToast.classList.remove('show');
+            return;
+          }
+          if (toastTargetApp) switchApp(toastTargetApp);
+          el.phoneToast.classList.remove('show');
+        });
+
+        el.btnOpenMissions.addEventListener('click', () => {
+          renderMissionLists();
+          el.missionModal.classList.add('show');
+        });
+        el.btnCloseMissionModal.addEventListener('click', () => {
+          el.missionModal.classList.remove('show');
+        });
+
+        el.btnGameoverRetry.addEventListener('click', () => startLevel(state.currentLevelId));
+        el.btnGameoverMenu.addEventListener('click', () => {
+          closeAllModals();
+          el.missionModal.classList.add('show');
+        });
+
+        el.btnRejectContinue.addEventListener('click', () => {
+          el.rejectModal.classList.remove('show');
+          switchApp('chat');
+        });
+
+        el.btnVictoryNext.addEventListener('click', () => {
+          const nextId = Number(el.btnVictoryNext.dataset.nextLevel) || 1;
+          startLevel(nextId);
+        });
+        el.btnVictoryMenu.addEventListener('click', () => {
+          closeAllModals();
+          el.missionModal.classList.add('show');
+        });
+      }
+
+      /* =======================================================================
+         KHỞI CHẠY ỨNG DỤNG
+         ======================================================================= */
+      function init() {
+        el.phoneClock.textContent = getCurrentTimeStr();
+        setInterval(() => {
+          el.phoneClock.textContent = getCurrenStTimeStr();
+        }, 30000);
+
+        renderMissionLists();
+        bindEvents();
+      }
+
+      window.addEventListener('DOMContentLoaded', init);
+    })();
+  </script>
+</body>
+</html>
