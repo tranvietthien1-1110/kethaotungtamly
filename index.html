@@ -3868,11 +3868,16 @@
           secs: state.levelStartedAt ? Math.round((Date.now() - state.levelStartedAt) / 1000) : 0
         };
       }
-
       function sendLog(ev, extra) {
         if (!LOG_URL) return;
         const lv = getCurrentLevel();
+        let tokenFromUrl = '';
+        try {
+          tokenFromUrl = new URL(LOG_URL).searchParams.get('k') || '';
+        } catch (_) {}
+
         const body = JSON.stringify({
+          k: tokenFromUrl,
           v: LOG_VERSION,
           sid: SESSION_ID,
           ts: new Date().toISOString(),
@@ -3881,34 +3886,42 @@
           diff: lv.difficulty,
           ...(extra || {})
         });
-        try {
-          if (navigator.sendBeacon && navigator.sendBeacon(LOG_URL, new Blob([body], { type: 'text/plain' }))) return;
-        } catch (_) {}
+
         try {
           fetch(LOG_URL, {
             method: 'POST',
-            mode: 'no-cors',
+            credentials: 'omit',
+            redirect: 'follow',
             keepalive: true,
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body
-          }).catch(() => {});
+          })
+            .then(res => res.text())
+            .then(txt => console.log('[GameLog]', ev, '->', txt))
+            .catch(() => {
+              fetch(LOG_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                credentials: 'omit',
+                keepalive: true,
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body
+              }).catch(() => {});
+            });
         } catch (_) {}
       }
-
       /* Kết thúc màn (thắng/thua). Chỉ ghi nhận một lần cho mỗi lượt chơi. */
       function finishLevel(result, extra) {
         if (!state.levelActive) return;
         state.levelActive = false;
         sendLog(result, { ...snapshot(), ...(extra || {}) });
       }
-
       /* Người chơi rời màn giữa chừng */
       function abandonIfActive(reason) {
         if (!state.levelActive) return;
         state.levelActive = false;
         sendLog('abandon', { ...snapshot(), reason });
       }
-
       /* ===================== TIỆN ÍCH ===================== */
       function formatVND(num) {
         return Number(num).toLocaleString('vi-VN') + ' VNĐ';
