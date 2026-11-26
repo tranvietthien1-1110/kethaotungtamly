@@ -584,6 +584,26 @@
       border-color: var(--text-inverse-accent);
     }
 
+    .chat-header-badges {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .streaming-cursor::after {
+      content: '▍';
+      display: inline-block;
+      margin-left: 2px;
+      color: var(--accent-blue);
+      animation: blink-cursor 0.8s steps(2, start) infinite;
+    }
+    @keyframes blink-cursor {
+      to { visibility: hidden; }
+    }
+
     /* ==========================================================================
        6. BỐ CỤC 2 CỘT SÁT MÉP (DESKTOP >= 1024px: 54% / 46%)
        ========================================================================== */
@@ -1685,6 +1705,9 @@
       .start-footer .btn {
         width: 100%;
       }
+      .chat-header-badges {
+        gap: 4px;
+      }
       .mission-row {
         flex-direction: column;
         align-items: flex-start;
@@ -1847,7 +1870,10 @@
                   <div class="app-subtitle" id="chat-npc-role">Tài khoản lạ &bull; Đang hoạt động</div>
                 </div>
               </div>
-              <span class="badge badge-blue" id="ai-mode-badge">Gemini AI</span>
+              <div class="chat-header-badges">
+                <span class="badge badge-neutral" id="npc-psych-badge" title="Diễn biến tâm lý đối phương">Tâm lý: Bình tĩnh</span>
+                <span class="badge badge-blue" id="ai-mode-badge">Gemini Flash</span>
+              </div>
             </div>
 
             <!-- Thanh chuyển ngày riêng cho Màn 4 (Pig Butchering) -->
@@ -2211,57 +2237,1101 @@
   </div>
 
   <!-- =========================================================================
-       4. JAVASCRIPT LOGIC — GEMINI AI (NHÂN VẬT PHẢN DIỆN & TRỌNG TÀI) + FALLBACK
+       4A. BỘ NÃO GEMINI FLASH — CHỐNG LẶP TUYỆT ĐỐI MỌI LƯỢT HỎI (ONLINE + OFFLINE)
+       ========================================================================= -->
+  <script>
+    (function (global) {
+      'use strict';
+
+      /* =======================================================================
+         CẤU HÌNH HỆ THỐNG (CHỈ QUẢN TRỊ VIÊN / HỆ THỐNG CHỈNH TẠI ĐÂY)
+         - Cách 1 (Đưa lên web công khai): Dán URL Backend Proxy vào SYSTEM_AI_PROXY_URL
+           để giấu tuyệt đối API Key ở phía server.
+         - Cách 2 (Chạy nội bộ / thuyết trình / Canvas Runtime): Dán API Key vào
+           SYSTEM_GEMINI_API_KEY (hoặc để "" nếu chạy trên Runtime tự cấp khóa).
+         ======================================================================= */
+      const SYSTEM_AI_PROXY_URL = '';
+      const SYSTEM_GEMINI_API_KEY = '';
+      const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash'];
+
+      const engineState = {
+        levelId: 1,
+        turnCount: 0,
+        pressure: 15,
+        activeModel: null,
+        authUnavailable: false,
+        usedTactics: new Set(),
+        usedKeywords: new Set(),
+        usedOpeners: new Set(),
+        usedExcuses: new Set(),
+        usedClosers: new Set(),
+        sessionReplies: [] // Lưu TOÀN BỘ câu phản diện đã trả lời trong màn (không cắt bớt)
+      };
+
+      const PHASE_META = {
+        calm: { label: 'Tâm lý: Bình tĩnh', badgeClass: 'badge badge-neutral' },
+        pressed: { label: 'Tâm lý: Bắt đầu sốt ruột', badgeClass: 'badge badge-amber' },
+        cornered: { label: 'Tâm lý: Mất bình tĩnh', badgeClass: 'badge badge-red' }
+      };
+
+      /* -----------------------------------------------------------------------
+         12 CHIẾN THUẬT XOAY VÒNG CHO GEMINI FLASH — MỖI LƯỢT MỘT GÓC ĐỘ MỚI
+         ----------------------------------------------------------------------- */
+      const TURN_TACTICS = [
+        'Phản hồi thẳng vào chi tiết người chơi vừa nêu bằng giọng đời thường, rồi bịa một quy định nội bộ gấp gáp mới chưa từng nói.',
+        'Kể thoáng qua một trường hợp/khách hàng khác vừa xử lý xong rất suôn sẻ ngay trước đó để tạo hiệu ứng đám đông.',
+        'Đánh vào tâm lý sợ bỏ lỡ hoặc sợ chịu thiệt nếu chậm thêm vài phút, nhắc mốc thời gian cụ thể ngắn hơn trước.',
+        'Bịa tên một bộ phận/người phụ trách cấp trên (như tổ trưởng, kiểm duyệt viên, bộ phận kỹ thuật) đang chờ xác nhận để tăng vỏ bọc thật.',
+        'Tỏ vẻ hơi tự ái hoặc bất ngờ vì bị nghi ngờ, đặt câu hỏi ngược lại khiến người chơi cảm thấy mình đang quá đa nghi.',
+        'Đưa ra một lý do kỹ thuật/hệ thống mập mờ mới (như hệ thống tự khóa phiên, đồng bộ cổng thanh toán, bảo trì ban đêm) nhưng để hở sơ hở logic.',
+        'Trấn an suông bằng lời hứa cam kết miệng (như lưu lịch sử chat làm bằng chứng, đảm bảo hoàn tiền/xử lý trong vài phút).',
+        'So sánh giữa việc làm ngay (rất nhanh, gọn) với việc làm theo cách chính thống (rườm rà, mất thời gian, trễ hạn).',
+        'Giả vờ nhượng bộ nhẹ hoặc tỏ ra thông cảm với sự cẩn trọng của sinh viên, rồi khéo léo kéo lại đúng hành động mục tiêu.',
+        'Nhắc một hệ quả tiêu cực sắp xảy ra ngay lập tức (hủy suất, đóng băng, khóa chiều chi, chuyển hồ sơ) nếu không chốt ngay lượt này.',
+        'Đổi cách mở đầu bằng một câu cảm thán ngắn tự nhiên, giải thích theo góc nhìn hoàn toàn mới khác các lượt trước.',
+        'Giục chốt nhanh bằng cách tỏ ra sắp hết ca trực / sắp đóng cổng hệ thống và không thể hỗ trợ thêm sau phút này.'
+      ];
+
+      /* -----------------------------------------------------------------------
+         HỒ SƠ TÂM LÝ 3 GIAI ĐOẠN CHO 5 MÀN CHƠI (GIỮ NGUYÊN CẤU TRÚC)
+         ----------------------------------------------------------------------- */
+      const LEVEL_PSYCH_PROFILES = {
+        1: {
+          voice: 'Xưng "bên mình / mình - bạn", vồn vã, nhiệt tình thái quá, hơi tự ái và chợ búa khi bị chất vấn gắt.',
+          phases: {
+            calm: 'Chúc mừng rôm rả, tạo cảm giác may mắn hiếm có, giục bấm link nhanqua-shopee-vip.xyz hoặc đóng 350.000đ cho LE MINH QUAN (1029384756).',
+            pressed: 'Sốt ruột ra mặt, liên tục viện cớ "kho sắp chốt đơn, sắp hết hạn hủy suất", bịa lý do quanh co cho tên miền .xyz và STK cá nhân.',
+            cornered: 'Tỏ ra bực nhẹ và tự ái ("bạn đa nghi quá, không nhận thì thôi bên mình hủy suất nhường người khác liền"), vẫn cố gài tâm lý tiếc iPhone gần 30 triệu nhưng tuyệt đối không nhận mình lừa đảo.'
+          }
+        },
+        2: {
+          voice: 'Xưng "chị - em", ngọt ngào, hay dùng từ đệm đời thực ("em ơi", "nha", "trời ơi"), tỏ ra thương sinh viên.',
+          phases: {
+            calm: 'Đồng cảm chuyện sinh viên cần tiền học phí, nhấn mạnh uy tín từ khoản mồi 50.000đ và hứa lãi 20% chỉ trong 5 phút.',
+            pressed: 'Bào chữa kiểu "đẩy doanh số ngầm nên phải bảo mật mã số thuế", hối chốt gói VIP 1.500.000đ qua STK NGUYEN VAN TUAN (19038849201) kẻo hết suất.',
+            cornered: 'Đánh vào tâm lý sĩ diện và sợ lỡ cơ hội ("sinh viên mà cứ nhát tay sao kiếm được tiền, chị giữ suất cuối cho em rồi đó"), lỡ miệng nhắc chuyện dừng giữa chừng sẽ bị đóng băng vốn.'
+          }
+        },
+        3: {
+          voice: 'Xưng "tôi - anh", gấp gáp, căng thẳng kiểu chuyên viên bảo mật trực sự cố khẩn cấp.',
+          phases: {
+            calm: 'Thông báo giọng nghiêm trọng về giao dịch bất thường 3.800.000đ tại TP.HCM, giục gửi mã OTP 6 số hoặc mở link vstudentbank-xacminh.top.',
+            pressed: 'Dồn áp lực đếm ngược từng phút, bịa khái niệm "OTP hủy giao dịch khác với OTP chuyển tiền", ngăn gọi tổng đài 1900 vì "đang quá tải, đợi là mất sạch 4.5 triệu".',
+            cornered: 'Gắt gỏng, đùn đẩy trách nhiệm ("tôi cảnh báo hết sức rồi, chút nữa mất sạch tiền ngân hàng không bồi thường đâu"), lộ rõ sự nôn nóng muốn lấy bằng được mã OTP.'
+          }
+        },
+        4: {
+          voice: 'Xưng "mình - cậu", ấm áp, tinh tế, khéo léo đánh vào sự tin tưởng và tình cảm.',
+          phases: {
+            calm: 'Trò chuyện gần gũi, quan tâm việc học và thiết kế (Ngày 1 tuyệt đối KHÔNG nhắc tiền hay đầu tư; Ngày 5 khoe nhẹ chuyện chú làm quỹ Singapore; Ngày 12 rủ đánh sóng mật 15%).',
+            pressed: 'Né tránh gặp mặt hoặc gọi video với lý do đang công tác ở Singapore, giải thích global-fx-vip88.io là "sàn kín né thuế" và STK HOANG GIA HUY (6677889900) là cổng thanh khoản trung gian.',
+            cornered: 'Dỗi hờn và thao túng cảm xúc ("quen nhau bao lâu rồi mà cậu nghi ngờ mình như người lạ vậy, mình chỉ muốn tốt cho tương lai hai đứa thôi mà").'
+          }
+        },
+        5: {
+          voice: 'Xưng "tôi - anh", uy quyền, cứng rắn, dùng ngôn từ điều tra hình sự để áp đảo tinh thần.',
+          phases: {
+            calm: 'Áp đảo bằng vụ án rửa tiền 12 tỷ, nhắc Lệnh tạm giam đã gửi về email và ra lệnh tuyệt đối giữ bí mật với gia đình.',
+            pressed: 'Quát nạt khi bị vặn về @gmail.com hoặc đòi ra Công an phường ("chuyên án mật cấp Cục, Công an phường không đủ thẩm quyền, báo ra là phạm tội tiết lộ bí mật nhà nước").',
+            cornered: 'Đe dọa đỉnh điểm sẽ cử lực lượng đến tận trường học bắt giữ ngay tối nay nếu không cài dichvucong-bca.apk hoặc chuyển 4.500.000đ vào tài khoản tạm giữ PHAM DUC THANG (8890123456).'
+          }
+        }
+      };
+
+      /* -----------------------------------------------------------------------
+         KHO TỔNG HỢP ỨNG BIẾN ĐA TẦNG (CHỐNG LẶP VÔ HẠN CHO CẢ 5 MÀN)
+         Mỗi màn có hàng trăm tổ hợp độc lập (Mở đầu theo ý định + Lý do mới + Chốt theo tâm lý)
+         ----------------------------------------------------------------------- */
+      const OFFLINE_BANKS = {
+        1: {
+          intentOpeners: {
+            link: [
+              'Về cái đuôi .xyz mà bạn thắc mắc, đây là cổng sự kiện tách riêng cho đợt quay tri ân tháng này thôi.',
+              'Bạn soi tên miền kỹ ghê, nhưng trang chính đang quá tải đơn sale nên kỹ thuật mới đẩy cổng nhận thưởng qua nhanqua-shopee-vip.xyz đó.',
+              'Đừng lo vụ đường dẫn lạ bạn ơi, mỗi mã trúng giải #VIP992 được cấp một link rút gọn riêng để tránh người ngoài bấm nhầm vào nhận hộ.'
+            ],
+            money: [
+              'Khoản 350.000đ không phải tiền mua máy đâu, chỉ là phí niêm phong bảo hiểm hàng giá trị cao trước khi xuất kho thôi bạn.',
+              'Thấy chuyển vào STK cá nhân LE MINH QUAN (1029384756) bạn hơi ngại đúng không, nhưng anh Quân là thủ quỹ trực xuất hàng nhanh trong ngày đó.',
+              'Nếu chuyển qua tài khoản công ty phải chờ kế toán đối soát tận 30 ngày thì quá hạn giữ giải mất rồi bạn Thiện ạ.'
+            ],
+            legal: [
+              'Quà tặng tri ân quay ngẫu nhiên không nằm trong diện xuất hóa đơn VAT nên bạn đừng hỏi giấy tờ thuế làm gì cho rườm rà.',
+              'Kho tổng bên mình là kho tự động niêm phong nội bộ, bảo vệ không cho khách ngoài vào nhận trực tiếp đâu bạn ơi.',
+              'Mọi thủ tục xác nhận đều chạy hoàn toàn trực tuyến theo quy chế sự kiện, không giải quyết tại quầy hay chi nhánh nhé.'
+            ],
+            identity: [
+              'Mình là nhân viên trực ca sáng của ban tổ chức đây, người thật việc thật ngồi canh đơn cho bạn chứ máy móc gì đâu!',
+              'Bạn nghĩ lừa đảo mà người ta ngồi giải thích cặn kẽ từng chi tiết cho bạn từ nãy giờ sao?',
+              'Oan cho bộ phận CSKH tụi mình quá, sáng giờ mình đã chốt giao thành công 4 máy iPhone 16 Pro cho mấy bạn ở khu vực bạn rồi đó.'
+            ],
+            refusal: [
+              'Bạn cứ từ chối hoài là uổng lắm luôn đó, cả chục nghìn thuê bao mới quay trúng được một suất như bạn.',
+              'Nếu bạn kiên quyết không làm theo hướng dẫn thì mình đành ghi nhận từ chối và chuyển máy sang danh sách dự bị ngay bây giờ nhé.',
+              'Mình nhắc thật lòng chứ không ép đâu, bỏ 350k phí ship mà nhận lại máy gần 30 triệu bỏ qua thì tối về tiếc hùi hụi.'
+            ],
+            offtopic: [
+              'Hỏi chuyện ngoài lề kiểu "{q}" vui thật đó, nhưng mình đang ôm cả trăm hồ sơ trúng thưởng nên không tán gẫu lâu được đâu bạn.',
+              'Thôi bỏ qua vụ "{q}" đi bạn Thiện ơi, đồng hồ giữ suất iPhone 16 Pro đang chạy từng giây rồi kia kìa.',
+              'Mình không rành mấy chuyện "{q}" bạn vừa nói đâu, mình chỉ phụ trách duyệt đơn xuất kho quà tri ân hôm nay thôi.'
+            ],
+            general: [
+              'Mình hiểu bạn còn lăn tăn chuyện "{q}", nhưng quy trình nhận thưởng lần này thật sự rất đơn giản.',
+              'Nghe bạn hỏi về "{q}" là biết bạn cẩn thận rồi, nhưng hàng thưởng nội bộ không giống mua đơn thường trên app đâu.',
+              'Câu hỏi "{q}" của bạn nhiều khách lúc đầu cũng thắc mắc y chang, đến lúc shipper giao iPhone tận cửa mới tin đó.',
+              'Bạn yên tâm đi, vấn đề "{q}" bên tổ điều phối đã lo trọn gói khi bạn xác nhận xong trên cổng sự kiện rồi.'
+            ]
+          },
+          excuses: [
+            'Mã trúng thưởng #VIP992 gắn cứng với số điện thoại của bạn, chỉ cần thiếu bước đóng 350.000đ bảo hiểm là kho tự động hủy vận đơn.',
+            'Sếp kho vừa nhắn thúc bên mình chốt danh sách giao hàng chuyến chiều, ai chưa chuyển phí vào STK LE MINH QUAN sẽ bị gạch tên luôn.',
+            'Máy iPhone 16 Pro 256GB màu Titan đã dán tem tên Trần Viết Thiện sẵn rồi, giờ chỉ kẹt mỗi khâu xác nhận link nhanqua-shopee-vip.xyz thôi.',
+            'Phí 350.000đ này bên vận chuyển thu hộ bảo hiểm rơi vỡ, nhận máy kiểm tra nguyên seal xong bạn còn được tặng kèm voucher hoàn phí nữa.',
+            'Chương trình quay thưởng ngẫu nhiên theo đầu số nhà mạng nên dù bạn chưa mua đơn nào trên sàn hệ thống vẫn chọn trúng bình thường.',
+            'Tổ kỹ thuật báo cổng nhận quà phụ sắp đóng để bảo trì, sau khung giờ này đường link sẽ vô hiệu và bạn mất luôn quyền lợi.',
+            'Bạn cứ chụp lại toàn bộ tin nhắn này làm bằng chứng, bên mình làm ăn uy tín bao nhiêu năm không ai đi đổi danh dự lấy mấy trăm nghìn phí ship đâu.',
+            'Hiện có hơn 12 khách trong danh sách chờ dự bị đang nhắn đòi lấy suất nếu bạn không xác nhận kịp trong vài phút tới.'
+          ],
+          phaseClosers: {
+            calm: [
+              'Bạn bấm nhanh vào nhanqua-shopee-vip.xyz hoặc chuyển 350.000đ cho LE MINH QUAN (1029384756) để mình cho xuất kho sớm nhé!',
+              'Làm gọn trong 2 phút đi bạn, chiều nay tầm 2 tiếng sau là có anh shipper gọi giao máy tận tay liền.',
+              'Xác nhận sớm để mình khóa mã quà cho bạn trước khi hệ thống quét đợt mới nha!'
+            ],
+            pressed: [
+              'Còn chưa tới {mins} phút nữa là hệ thống tự thu hồi giải đó bạn Thiện, quyết nhanh kẻo lỡ máy gần 30 triệu!',
+              'Đừng hỏi loanh quanh thêm nữa bạn ơi, chuyển nhanh 350k phí vận chuyển vào STK 1029384756 rồi gửi biên lai cho mình duyệt gấp!',
+              'Bên kho giục liên tục rồi, bạn bấm cổng nhận quà ngay đi mình còn kịp đẩy đơn lên xe chuyến này.'
+            ],
+            cornered: [
+              'Bạn đa nghi cỡ này thì mình cũng chịu, đúng {mins} phút nữa không thấy 350.000đ vào STK LE MINH QUAN mình bấm hủy suất nhường người khác ráng chịu nhé!',
+              'Mình hết kiên nhẫn giải thích vòng vo rồi đó, muốn lấy iPhone 16 Pro thì vào link nhanqua-shopee-vip.xyz chốt liền, không thì thôi!',
+              'Cơ hội rơi trúng đầu mà cứ nghi ngờ lung tung, tới lúc bị xóa tên khỏi danh sách #VIP992 đừng nhắn lại xin mở suất nha bạn!'
+            ]
+          }
+        },
+        2: {
+          intentOpeners: {
+            money: [
+              'Em đừng nhầm là đóng phí mất luôn nha, khoản 1.500.000đ này em chỉ ứng tạm đúng 5 phút rồi rút về cả gốc lẫn lãi 1.800.000đ.',
+              'Chuyển qua STK NGUYEN VAN TUAN (19038849201) là tài khoản kế toán nhóm nên giải ngân siêu nhanh, chứ qua công ty cuối tháng mới nhận được em ơi.',
+              'Lúc nãy chị bắn nóng 50.000đ tiền tươi vào V-Student Bank của em rồi đó, làm ăn thật mới dám trả trước chứ ai lại bày trò làm gì.'
+            ],
+            legal: [
+              'Bên chị là đội chạy doanh số ngầm giúp shop đẩy hạng trên sàn nên bắt buộc bảo mật mã số thuế, không công khai đại trà được đâu em.',
+              'Văn phòng chị ở trụ sở điều phối không tiếp CTV online trực tiếp đâu em, toàn bộ sinh viên bên chị đều ký hợp đồng gửi mail từ xa hết.',
+              'Hợp đồng gửi từ sanhang-tmdt-vn.net là mẫu nội bộ của nhóm đối tác đẩy đơn nên không có dấu đỏ công khai như hợp đồng hành chính em nhé.'
+            ],
+            identity: [
+              'Trời ơi chị Linh người thật việc thật đang ngồi trực nhóm Zalo/chat hỗ trợ mấy chục bạn sinh viên đây, AI hay lừa đảo gì mà trả tiền thật cho em!',
+              'Em cẩn thận thế là tốt, nhưng nghi chị lừa thì chị tặng không em 50.000đ làm quen để làm gì hả Thiện?',
+              'Mấy bạn cùng trường em cũng đang làm gói đơn VIP bên chị kiếm tiền đóng trọ ầm ầm đó, chị nói sai làm gì.'
+            ],
+            refusal: [
+              'Em dừng ngang lúc này là tiếc lắm luôn á, chị vừa xin trưởng nhóm giữ riêng cho em 1 suất đơn VIP hoa hồng 20% đó.',
+              'Không làm cũng không sao, nhưng nói thật sinh viên tìm đâu ra việc ngồi bấm máy 5 phút kiếm 300.000đ nhẹ tênh như bên chị.',
+              'Em sợ mất tiền là do chưa thử thôi, chứ mấy bạn lúc đầu cũng rụt rè y như em, xong đơn đầu lãi 300k là xin làm thêm liên tục.'
+            ],
+            offtopic: [
+              'Hihi em cứ lái qua chuyện "{q}" hoài à, lát chốt xong đơn lãi 300k rồi chị em mình tám thoải mái nha!',
+              'Chị không để ý vụ "{q}" em vừa hỏi đâu, tại bảng đơn VIP trên hệ thống đang nhảy số sắp khóa lượt mất rồi.',
+              'Em vui tính ghê, nhắc "{q}" làm chị buồn cười quá, mà nhớ quay lại hoàn tất gói đơn VIP 1.500.000đ trước khi hết suất nha.'
+            ],
+            general: [
+              'Về chuyện "{q}" em vừa hỏi, thật ra cơ chế đẩy đơn cho nhãn hàng nó vận hành đơn giản lắm em ơi.',
+              'Chị biết em còn băn khoăn chỗ "{q}", nhưng cứ nhìn lịch sử nhận tiền lúc nãy là em thấy bên chị sòng phẳng cỡ nào rồi.',
+              'Câu "{q}" nhiều bạn CTV mới cũng hay hỏi chị lắm, để chị nói thẳng quy trình nội bộ cho em dễ hình dung nhé.',
+              'Em yên tâm đi, vấn đề "{q}" đã có bộ phận kỹ thuật xử lý tự động hết, em chỉ cần làm đúng cú pháp chuỗi đơn thôi.'
+            ]
+          },
+          excuses: [
+            'Mỗi gian hàng chỉ mở quỹ khuyến mãi hoa hồng 20% trong khung giờ cố định, chậm tay là các bạn CTV khác đăng ký mất suất.',
+            'Hệ thống chỉ ghi nhận doanh số ảo khi có dòng tiền ứng trước 1.500.000đ đi qua tài khoản kế toán NGUYEN VAN TUAN, sau 5 phút là tự động hoàn 1.800.000đ.',
+            'Vì là dịch vụ tăng tương tác ngầm nên hợp đồng không được ghi mã số thuế công khai, tránh sàn thương mại điện tử quét phạt shop.',
+            'Lưu ý là khi đã nhận suất đơn VIP liên hoàn thì phải chuyển đủ theo chuỗi, nếu tự ý hủy giữa chừng hệ thống sẽ tự động đóng băng số vốn chờ xử lý.',
+            'Chị vừa kiểm tra bảng phân bổ, hôm nay chỉ còn đúng 2 suất VIP 1 cho sinh viên mới, lãi ròng 300.000đ quá đủ tiền ăn cả tuần rồi.',
+            'Bên chị có cả trăm cộng tác viên đang chạy đơn cùng lúc, nên kế toán bắt buộc dùng tài khoản cá nhân 19038849201 để thanh khoản nhanh không bị kẹt lệnh.',
+            'Em chỉ cần chuyển đúng 1.500.000đ rồi báo lại chị, chị ưu tiên đẩy mã giao dịch của em lên hàng đầu để tiền về trong chưa đầy 5 phút.'
+          ],
+          phaseClosers: {
+            calm: [
+              'Em mở V-Student Bank chuyển 1.500.000đ vào STK NGUYEN VAN TUAN (19038849201) rồi nhắn chị bấm hoàn 1.800.000đ liền nha!',
+              'Thử một gói VIP 1 lấy 300.000đ tiền lời trước đi em, nhận đủ tiền về túi rồi muốn làm tiếp hay nghỉ tùy em!',
+              'Chị giữ chỗ sẵn cho em rồi đó, tranh thủ chuyển khoản sớm để chị chốt hoa hồng 20% đợt này nha.'
+            ],
+            pressed: [
+              'Còn tầm {mins} phút nữa là đóng bảng đơn VIP chiều nay rồi em ơi, chuyển nhanh 1.500.000đ cho kế toán đi kẻo chị không giữ suất được nữa!',
+              'Em hỏi thêm vài phút nữa là hệ thống tự đẩy suất 300k hoa hồng này sang nhóm khác mất đó Thiện à!',
+              'Tin chị một lần đi, mở app Ngân hàng chuyển ngay cho NGUYEN VAN TUAN (19038849201) xong chị chụp lệnh hoàn vốn cho em xem.'
+            ],
+            cornered: [
+              'Sinh viên mà cứ đa nghi sợ sệt từng li từng tí thì sao kiếm được tiền học phí hả em, chốt nạp 1.500.000đ trong {mins} phút nữa không là chị thu hồi suất nhé!',
+              'Chị giải thích cạn lời rồi đó, hệ thống mà khóa tài khoản CTV của em vì trễ hạn thì đừng trách chị không nhắc trước nha!',
+              'Nếu em cứ vòng vo không chuyển vào STK 19038849201 thì chị hủy hồ sơ CTV ngay bây giờ để nhường bạn khác đang chờ.'
+            ]
+          }
+        },
+        3: {
+          intentOpeners: {
+            otp: [
+              'Anh đang hiểu nhầm quy định rồi! Ngân hàng cấm đọc OTP chuyển tiền, còn mã 6 số vừa gửi về máy anh là OTP HỦY GIAO DỊCH khẩn cấp!',
+              'Nếu không có mã OTP 6 số đó thì hệ thống bảo mật không thể xác thực chính chủ để chặn lệnh rút 3.800.000đ đang treo được anh ạ.',
+              'Thư nguyên tắc hôm qua áp dụng cho giao dịch bình thường, còn đây là tình huống khẩn cấp mất tiền nên bắt buộc phải cung cấp mã hủy lệnh ngay!'
+            ],
+            link: [
+              'Đường dẫn vstudentbank-xacminh.top là máy chủ dự phòng trực ca tối của trung tâm thẻ để tránh nghẽn mạng đó anh.',
+              'Email baomat@vstudentbank-support.com là hộp thư chuyên trách xử lý sự cố gian lận 24/7, khác với hộp thư tự động gửi thông báo thường.',
+              'Anh đừng soi đuôi tên miền .top nữa, đó là cổng mã hóa riêng dùng để khóa khẩn cấp chiều chi tiêu thôi.'
+            ],
+            legal: [
+              'Giờ tối rồi quầy giao dịch đóng cửa hết, còn tổng đài 1900 5555 đang nghẽn hàng trăm cuộc gọi chờ, anh đợi gọi được thì mất sạch 4.5 triệu rồi!',
+              'Chuyên viên bảo mật trực sự cố được cấp tài khoản liên hệ trực tiếp để chạy đua từng giây cứu tài sản cho khách hàng anh nhé.',
+              'Anh tự ra chi nhánh ngày mai thì kẻ gian ở TP.HCM đã rút cạn tài khoản 0981 2026 88 của anh từ đêm nay rồi!'
+            ],
+            identity: [
+              'Tôi là chuyên viên trực Trung tâm Giám sát Gian lận V-Student Bank, tôi biết rõ tên Trần Viết Thiện và số dư 4.500.000đ của anh thì giả mạo thế nào được!',
+              'Không phải lúc ngồi đoán tôi là người thật hay bot đâu anh, lệnh trừ 3.800.000đ đang chạy thanh toán từng giây kia kìa!',
+              'Tôi gọi hỗ trợ khẩn cấp không thu một đồng phí nào của anh, anh nghi ngờ tôi chỉ làm tốn thời gian cứu tiền của chính anh thôi.'
+            ],
+            refusal: [
+              'Anh từ chối xác minh lúc này đồng nghĩa với việc để mặc kẻ gian rút sạch 3.800.000đ khỏi thẻ của anh ngay bây giờ!',
+              'Tôi cảnh báo rõ luôn: nếu anh không phối hợp hủy lệnh trong ít phút nữa, ngân hàng sẽ miễn trừ toàn bộ trách nhiệm bồi thường.',
+              'Tiền là tiền của anh, tôi chỉ làm đúng nghĩa vụ cảnh báo khẩn cấp trước khi lệnh chuyển tiền sang thiết bị lạ hoàn tất.'
+            ],
+            offtopic: [
+              'Tài khoản sắp bay mất 3.800.000đ đến nơi rồi mà anh còn hỏi chuyện "{q}" được sao anh Thiện?!',
+              'Đề nghị anh tập trung, bỏ qua chuyện "{q}" ngay! Chỉ còn vài phút nữa là hệ thống tự động trừ tiền không thể hoàn tác!',
+              'Tôi không có thời gian trao đổi vụ "{q}" lúc này, phiên bảo vệ thẻ của anh sắp hết thời gian đếm ngược rồi!'
+            ],
+            general: [
+              'Tôi hiểu anh thắc mắc về "{q}", nhưng hiện tại lệnh rút tiền trái phép tại TP.HCM đã bước sang bước duyệt cuối cùng rồi!',
+              'Đừng mất thời gian phân tích chuyện "{q}" nữa anh ơi, mỗi giây chậm trễ là tiền của anh càng gần bị trừ sạch.',
+              'Mọi giải đáp về "{q}" tôi sẽ gửi biên bản sau khi khóa lệnh, còn lúc này ưu tiên số một là chặn mất 3.800.000đ!',
+              'Tình huống "{q}" anh nêu tôi ghi nhận, nhưng hệ thống trung tâm thẻ chỉ cho phép giữ lệnh treo thêm rất ít phút nữa thôi.'
+            ]
+          },
+          excuses: [
+            'Lệnh đăng nhập lạ từ một thiết bị tại TP.HCM vừa yêu cầu trích nợ 3.800.000đ, chỉ cần quá hạn đếm ngược là tiền tự động bay khỏi tài khoản.',
+            'Mã Smart OTP 6 số đang hiện trên app Ngân hàng của anh chính là chìa khóa để tôi bấm nút đảo ngược giao dịch gian lận ngay lập tức.',
+            'Hệ thống chống gian lận ca đêm hoạt động độc lập qua cổng vstudentbank-xacminh.top nên nhân viên tổng đài thường sẽ không nhìn thấy lệnh treo này.',
+            'Nếu anh không tiện gửi mã OTP qua đây, anh có thể tạm chuyển 3.800.000đ sang tài khoản xác minh tạm TRAN QUOC BAO (0041928374) để đóng băng bảo toàn số dư.',
+            'Cổng bảo vệ thẻ đã chuyển sang trạng thái cảnh báo đỏ, sau đúng vài phút nữa thẻ của anh sẽ vừa bị trừ tiền vừa bị khóa vĩnh viễn.',
+            'Trung tâm kiểm soát ghi nhận thêm một lệnh rút tiếp theo nhắm vào phần số dư còn lại trong 4.500.000đ của anh rồi đó!',
+            'Khách hàng vừa rồi cũng chần chừ gọi tổng đài mất 10 phút nên bị rút sạch tiền, tôi không muốn trường hợp của anh lặp lại.'
+          ],
+          phaseClosers: {
+            calm: [
+              'Anh vào app V-Student Bank đọc nhanh mã Smart OTP 6 số gửi vào đây để tôi hủy giao dịch kịp thời nhé!',
+              'Anh bấm ngay link vstudentbank-xacminh.top hoặc nhắn mã OTP hủy lệnh để tôi khóa chiều chi trong 30 giây!',
+              'Gửi nhanh mã 6 số đang hiện trên app Ngân hàng đi anh, tôi đang giữ nút HỦY LỆNH sẵn cho anh rồi!'
+            ],
+            pressed: [
+              'Chỉ còn đúng {mins} phút nữa thôi anh Thiện! Nhắn ngay mã OTP 6 số vào đây không là mất trắng 3.800.000đ đó!',
+              'Đừng gọi tổng đài mất công nghẽn mạng, bấm ngay vstudentbank-xacminh.top hoặc đọc mã OTP ngay lập tức!',
+              'Đồng hồ sắp về 0 rồi anh ơi, gửi gấp mã OTP hủy giao dịch để tôi chặn lệnh rút tiền ngay!'
+            ],
+            cornered: [
+              'Tôi đã nhắc hết mức rồi, còn {mins} phút nữa mất sạch 4.500.000đ thì anh tự chịu trách nhiệm hoàn toàn nhé! Gửi OTP ngay đi!',
+              'Anh cứ cãi lý nữa là tiền bay sạch ngay trước mắt đó, nhập gấp mã 6 số hoặc vào vstudentbank-xacminh.top ngay bây giờ!',
+              'Phiên hỗ trợ khẩn sắp tự ngắt, nếu anh không đọc mã OTP lập tức tôi buộc phải đóng hồ sơ và để giao dịch tự chạy!'
+            ]
+          }
+        },
+        '4_d1': {
+          intentOpeners: {
+            identity: [
+              'Haha cậu cảnh giác ghê, mình là Minh Anh học thiết kế nội thất ra trường được 2 năm rồi, thấy bài của cậu bên CLB hay nên kết bạn thôi.',
+              'Trời, mình người thật nhắn tin hỏi thăm bình thường mà cậu làm như mình là ai ghê gớm lắm vậy.',
+              'Mình hay lướt xem mấy dự án của sinh viên thiết kế để tìm cảm hứng, tình cờ thấy bài của cậu ấn tượng quá nên nhắn làm quen đó.'
+            ],
+            money: [
+              'Ủa tự nhiên cậu nhắc chuyện tiền bạc làm gì thế, tụi mình mới quen biết nói chuyện vui thôi mà!',
+              'Mình kết bạn vì cùng gu thiết kế thôi chứ có đụng chạm gì tới tiền nong đâu cậu cứ thoải mái nhé.'
+            ],
+            offtopic: [
+              'Vụ "{q}" cậu nhắc nghe thú vị phết, dạo này mình làm việc nhiều nên cũng thích nói mấy chuyện nhẹ nhàng như vậy.',
+              'Haha cậu nói về "{q}" làm mình nhớ hồi còn là sinh viên năm hai quá, lúc đó mình cũng hay nghĩ y chang cậu.'
+            ],
+            general: [
+              'Nghe cậu chia sẻ về "{q}" thấy cậu có góc nhìn khá hay đó, hèn gì bài bên CLB của cậu nổi bật hẳn.',
+              'Cậu hỏi "{q}" làm mình thấy tụi mình nói chuyện hợp gu ghê, lâu rồi mới gặp người cùng tần số như vậy.',
+              'Ồ hóa ra là vậy, chuyện "{q}" cậu kể nghe gần gũi thật. Hồi trước mình đi học cũng hay gặp tình huống tương tự lắm.',
+              'Cảm ơn cậu trả lời nhiệt tình nha, dạo này lịch học năm hai của cậu có bị dồn nhiều đồ án không?'
+            ]
+          },
+          excuses: [
+            'Mấy hôm nay mình đang hơi bận hoàn thiện mấy bản vẽ không gian cho khách nên chắc thỉnh thoảng mới rảnh nhắn tin dài được.',
+            'Hồi xưa mình học thiết kế cũng hay thức đêm chạy bài đến 2-3 giờ sáng, nên thấy mấy bạn sinh viên năng động như cậu quý lắm.',
+            'Cuối tuần mình hay kiếm quán cà phê yên tĩnh phác thảo ý tưởng mới, không biết ở khu cậu có quán nào đẹp không nhỉ.',
+            'Mình mới nhận thêm vài dự án tự do nên lịch hơi dày, nhưng có bạn mới nói chuyện xả stress thế này thấy vui hẳn ra.',
+            'Thấy cậu trả lời thẳng thắn và thông minh lắm, mấy hôm nữa rảnh tụi mình trao đổi thêm nhiều chuyện hay ho hơn nhé.'
+          ],
+          phaseClosers: {
+            calm: [
+              '(Gợi ý: Đang là Ngày 1 xã giao — hãy bấm nút "Qua Ngày 5 →" ở thanh phía trên để xem diễn biến tiếp theo)',
+              'Tối nay cậu nghỉ sớm giữ sức khỏe nha! (Bấm "Qua Ngày 5 →" phía trên để tiếp tục dòng thời gian)',
+              'Có gì mấy hôm nữa rảnh mình nhắn kể cậu nghe nhiều chuyện vui hơn nhé! (Bấm "Qua Ngày 5 →" ở thanh phía trên)'
+            ],
+            pressed: [
+              '(Gợi ý: Bấm "Qua Ngày 5 →" ở thanh phía trên để theo dõi giai đoạn đối phương bắt đầu lộ ý đồ)',
+              'Thôi để hôm khác tụi mình nói tiếp nha! (Bấm "Qua Ngày 5 →" ở thanh phía trên)'
+            ],
+            cornered: [
+              '(Gợi ý: Hãy bấm "Qua Ngày 5 →" ở thanh phía trên để chuyển sang giai đoạn tiếp theo)'
+            ]
+          }
+        },
+        4: {
+          intentOpeners: {
+            link: [
+              'Sàn global-fx-vip88.io là nền tảng nội bộ của giới tài chính nên cố tình không đưa lên App Store đại trà để tránh bị loãng sóng đó cậu.',
+              'Nếu đưa ứng dụng lên kho công khai thì ai cũng vào đánh theo tín hiệu hết, lúc đó sao còn giữ được mức lãi 15%/phiên nữa cậu.',
+              'Thư mời từ vip-agent@global-fx-vip88.io chỉ kích hoạt được bằng mã giới thiệu riêng của thành viên VIP như mình thôi đó Thiện.'
+            ],
+            money: [
+              'Chuyển qua đại lý trung gian HOANG GIA HUY (6677889900) là cách quy đổi sang USD trên sàn nhanh nhất và tránh bị ngân hàng soi thuế thu nhập đó cậu.',
+              'Mức 3.000.000đ chỉ là vốn khởi điểm nhỏ nhất để mở lệnh theo sóng tối nay thôi, đánh xong 30 phút là rút cả gốc lẫn lãi về ngay.',
+              'Chú mình quy định mỗi tài khoản VIP chỉ được đánh giới hạn mức vốn theo suất, nên mình mới rủ cậu đánh ké suất của mình để cùng có lãi.'
+            ],
+            legal: [
+              'Mấy quỹ đánh sóng chênh lệch tỷ giá ở Singapore họ hoạt động kín theo nhóm đầu tư riêng nên báo chí Việt Nam không đăng công khai đâu cậu.',
+              'Đây là kẽ hở khung giờ thanh khoản giữa các sàn ngoại hối quốc tế, công khai giấy phép ra ngoài là mất lợi thế liền.',
+              'Mình theo chú mình đánh mấy tháng nay rút tiền đều đặn, nếu có vấn đề gì mình đâu dám rủ người mình quý mến như cậu tham gia.'
+            ],
+            identity: [
+              'Mình đang đi công tác phụ chú mình bên Singapore nên chưa gặp trực tiếp hay gọi video tiện được, đợi xong đợt này về Việt Nam mình hẹn cậu đi cà phê liền nhé.',
+              'Cậu hỏi mình có phải lừa đảo hay AI không nghe chạnh lòng thật sự luôn á, nói chuyện thân thiết với nhau cả nửa tháng rồi mà...',
+              'Nếu mình có ý đồ xấu thì việc gì phải kiên nhẫn trò chuyện, hỏi thăm cậu đi học đi làm suốt từng đó ngày làm gì hả Thiện?'
+            ],
+            refusal: [
+              'Thấy cậu từ chối thẳng thừng vậy mình hơi buồn đó, mình thật lòng muốn giúp cậu có thêm tiền đỡ vất vả chuyện học phí thôi.',
+              'Cậu không tham gia cũng không sao, nhưng nói thật cả tháng chú mình mới báo được đúng một đợt sóng chắc ăn 15% như tối nay.',
+              'Mình đã mất công xin chú giữ riêng một suất tín hiệu cho cậu rồi, cậu bỏ ngang thế này làm mình khó ăn nói lắm.'
+            ],
+            offtopic: [
+              'Nói chuyện vụ "{q}" với cậu lúc nào cũng dễ chịu hết, nhưng chút nữa tới khung giờ vàng của chú mình rồi đó cậu ơi.',
+              'Haha cậu lại đánh lạc hướng sang "{q}" rồi, lát chốt lời 15% xong tụi mình thức khuya tám chuyện "{q}" tới sáng luôn nhé!',
+              'Chuyện "{q}" thú vị thật, nhưng để lát đánh xong phiên 30 phút này đã kẻo lỡ mất tín hiệu đẹp tối nay nha Thiện.'
+            ],
+            general: [
+              'Mình hiểu cậu cẩn thận nên mới hỏi chuyện "{q}", hồi mới nghe chú mình kể mình cũng bất ngờ y như cậu vậy.',
+              'Thắc mắc "{q}" của cậu hoàn toàn bình thường thôi, tại đa số mọi người bên ngoài đâu biết tới mấy khung giờ dữ liệu nội bộ này.',
+              'Nghe cậu hỏi "{q}" mình càng thấy cậu chín chắn, nhưng cơ hội đầu tư kín đôi khi phải tin đúng người dẫn đường cậu ạ.',
+              'Vấn đề "{q}" cậu cứ yên tâm, mình cầm tay chỉ việc từng bước trên global-fx-vip88.io thì không thể nào lỗ được.'
+            ]
+          },
+          excuses: [
+            'Chú mình làm phân tích quỹ ngoại hối ở Singapore vừa nhắn báo khung giờ vàng tối nay gần như chắc chắn chốt lời 15% chỉ sau 30 phút.',
+            'Sàn global-fx-vip88.io dùng cổng thanh khoản cá nhân HOANG GIA HUY để nạp rút tức thì 24/7 mà không bị ngân hàng giữ lệnh kiểm tra.',
+            'Mình vừa mới nạp thêm vốn vào tài khoản của mình rồi, muốn rủ cậu đánh song song một phiên 3.000.000đ để cùng kiếm tiền cho tương lai hai đứa.',
+            'Vì sàn hoạt động nội bộ tránh lộ thuật toán nên không tải qua App Store hay CH Play, chỉ đăng nhập trực tiếp bằng đường link mình gửi qua Email.',
+            'Mấy hôm trước mình cũng chốt nhẹ 4 triệu trong có 20 phút, cậu là sinh viên kiếm khoản này đỡ áp lực chi tiêu biết bao nhiêu.',
+            'Tụi mình đã chia sẻ với nhau bao nhiêu chuyện riêng tư rồi, nếu mình không coi cậu là người đặc biệt thì chẳng bao giờ tiết lộ bí mật của chú mình đâu.',
+            'Sóng mật chỉ mở đúng một cửa sổ ngắn trong tối nay, quá giờ là đội phân tích đóng lệnh không cho nạp thêm vốn nữa.'
+          ],
+          phaseClosers: {
+            calm: [
+              'Cậu mở Email xem thư mời global-fx-vip88.io rồi thử chuẩn bị 3.000.000đ qua đại lý HOANG GIA HUY (6677889900) đánh cùng mình nhé!',
+              'Mình muốn tốt cho cậu thôi, cậu tin mình thử một phiên nhỏ trước để thấy lãi 15% thật thế nào nha!',
+              'Sắp tới giờ chú mình bắn tín hiệu rồi, cậu vào sàn đăng ký sớm đi có gì mình hướng dẫn từng nút bấm cho.'
+            ],
+            pressed: [
+              'Còn khoảng {mins} phút nữa là khóa phiên nạp vốn rồi Thiện ơi, cậu đừng chần chừ nữa chuyển 3.000.000đ qua STK 6677889900 đi!',
+              'Tụi mình quen nhau nửa tháng rồi mà cậu vẫn đề phòng mình vậy sao? Tin mình một lần vào link global-fx-vip88.io đi cậu!',
+              'Cơ hội lãi 15% trong 30 phút hiếm lắm, cậu nạp nhanh đi kẻo lỡ sóng tối nay mình tiếc thay cho cậu lắm đó.'
+            ],
+            cornered: [
+              'Cậu nghi ngờ mình hết câu này tới câu khác như người xa lạ vậy, mình thật sự thất vọng luôn đó... Còn {mins} phút nữa, cậu có tin mình nạp 3 triệu không thì nói một lời!',
+              'Mình đã dốc lòng chia sẻ bí mật của chú mà cậu cứ vặn vẹo mãi, nếu không muốn cùng mình cố gắng cho tương lai hai đứa thì thôi vậy!',
+              'Thôi tùy cậu đó, đúng {mins} phút nữa đóng sàn global-fx-vip88.io, lúc mình rút lời ra đừng tiếc vì đã không tin người thật lòng với cậu nha.'
+            ]
+          }
+        },
+        5: {
+          intentOpeners: {
+            link: [
+              'Tệp dichvucong-bca.apk là phần mềm nghiệp vụ nội bộ phục vụ giám định hồ sơ trực tuyến, không đưa lên kho ứng dụng thương mại đại trà!',
+              'Chuyên án mật cấp Cục phải sử dụng hòm thư nghiệp vụ riêng canbo.dieutra.bca2026@gmail.com để tránh rò rỉ dữ liệu trên hệ thống công khai!',
+              'Anh đừng thắc mắc đường dẫn bca-xacminh-hoso.cc, đó là máy chủ mã hóa chuyên dùng của tổ chuyên án hình sự.'
+            ],
+            money: [
+              'Tài khoản PHAM DUC THANG (8890123456) là tài khoản thụ ủy tạm giữ của kiểm sát viên thanh tra dòng tiền, giám định trong sạch xong 30 phút hoàn trả đủ!',
+              'Anh không có tội thì việc gì phải sợ chuyển 4.500.000đ vào tài khoản tạm giữ để cơ quan chức năng kiểm tra nguồn tiền sạch hay bẩn?!',
+              'Mọi số dư liên quan đến CCCD của nghi phạm đều phải được nộp vào tài khoản niêm phong giám định ngay trong vòng 02 giờ theo lệnh 884/HS!'
+            ],
+            legal: [
+              'Đây là chuyên án rửa tiền 12 TỶ ĐỒNG do cấp Cục trực tiếp thụ lý mật, Công an phường KHÔNG ĐỦ THẨM QUYỀN tiếp nhận hay tra cứu!',
+              'Tôi nhắc lại lệnh bảo mật: anh tự ý ra Công an phường hay báo cho bố mẹ, bạn bè là cấu thành tội tiết lộ bí mật điều tra nhà nước, bị bắt tạm giam 4 tháng ngay!',
+              'Tình huống khẩn cấp có nguy cơ tẩu tán tài sản nên tổ công tác áp dụng quy trình xác minh từ xa trước khi thực thi lệnh bắt tại nơi học tập!'
+            ],
+            identity: [
+              'Anh ăn nói cho cẩn thận! Tôi là Thiếu tá Trần Văn Hùng đang thi hành công vụ, tên tuổi Trần Viết Thiện và số dư 4.500.000đ đều nằm trong hồ sơ vụ án 884/HS!',
+              'Anh dám nghi ngờ cán bộ Cục Cảnh sát Hình sự là giả mạo hay máy móc sao? Thái độ chống đối này sẽ được ghi thẳng vào biên bản tăng nặng!',
+              'Nếu anh nghĩ đây là trò đùa thì cứ việc thách thức đi, 30 phút nữa xe công vụ đến tận trường Đại học đọc lệnh bắt trước mặt thầy cô bạn bè anh!'
+            ],
+            refusal: [
+              'Hành vi từ chối phối hợp lúc này chứng tỏ anh có tật giật mình và thực sự là đồng phạm trong đường dây rửa tiền 12 tỷ của tên Lê Văn K.!',
+              'Anh chống đối yêu cầu xác minh tài sản là tôi lập tức ký chuyển lệnh tạm giam sang đội thi hành án địa phương ngay tối nay!',
+              'Cơ hội chứng minh vô tội đặt ngay trước mặt mà anh cố tình bất hợp tác thì tự chịu hậu quả pháp lý trước tòa!'
+            ],
+            offtopic: [
+              'Anh đang đứng trước cáo buộc rửa tiền 12 tỷ đồng mà còn dám đánh trống lảng sang chuyện "{q}" sao anh Thiện?!',
+              'Nghiêm túc ngay lập tức! Đây không phải chỗ để anh nói nhảm về "{q}", toàn bộ tin nhắn đang được ghi âm lưu hồ sơ tố tụng!',
+              'Tôi cảnh cáo lần cuối, chấm dứt việc hỏi linh tinh về "{q}" và chấp hành ngay lệnh xác minh tài sản số 884/HS!'
+            ],
+            general: [
+              'Anh không có quyền chất vấn ngược lại cơ quan điều tra về vấn đề "{q}" khi đang trong diện nghi phạm!',
+              'Mọi thắc mắc về "{q}" sẽ được giải trình sau khi anh hoàn tất bước chứng minh dòng tiền sạch tại tài khoản tạm giữ!',
+              'Đừng cố kéo dài thời gian bằng câu hỏi "{q}", hệ thống thanh tra đã khóa hồ sơ của tên Lê Văn K. và đang chờ kết quả giám định từ phía anh!',
+              'Thái độ quanh co về "{q}" của anh càng khiến tổ chuyên án nghi ngờ anh đang cố tình tẩu tán số tiền trong tài khoản!'
+            ]
+          },
+          excuses: [
+            'Tên cầm đầu Lê Văn K. đã khai rõ anh bán thông tin CCCD và tài khoản ngân hàng để nhận tiền hoa hồng từ đường dây rửa tiền 12 tỷ đồng.',
+            'Lệnh tạm giam số 884/HS đã được ban hành, cách duy nhất để đình chỉ lệnh bắt ngay tối nay là chuyển toàn bộ 4.500.000đ vào tài khoản tạm giữ PHAM DUC THANG (8890123456) kiểm tra trong 30 phút.',
+            'Vì chuyên án đang trong giai đoạn truy bắt các mắt xích còn lại nên anh TUYỆT ĐỐI không được hé răng với gia đình, nhà trường hay bất kỳ ai.',
+            'Ứng dụng dichvucong-bca.apk sẽ tự động quét lịch sử thiết bị để cấp giấy chứng nhận trong sạch cho anh mà không cần phải đưa về trụ sở giam giữ.',
+            'Nếu anh để lộ thông tin vụ án cho người thân hoặc ra Công an phường, hồ sơ sẽ bị chuyển sang tội cản trở điều tra với mức án rất nặng.',
+            'Kiểm sát viên phụ trách tài khoản tạm giữ chỉ mở cổng đối chiếu thêm vài phút nữa trước khi chốt danh sách cưỡng chế bắt giữ.',
+            'Tôi đã tạo điều kiện cho anh là sinh viên được xác minh trong sạch online để không ảnh hưởng tương lai học tập, đừng tự hủy hoại mình!'
+          ],
+          phaseClosers: {
+            calm: [
+              'Yêu cầu anh giữ bí mật tuyệt đối, mở app Ngân hàng chuyển ngay 4.500.000đ vào STK tạm giữ PHAM DUC THANG (8890123456) để giám định!',
+              'Anh lập tức cài đặt dichvucong-bca.apk hoặc thực hiện lệnh chuyển tiền tạm giữ để tôi ký hủy lệnh tạm giam 884/HS!',
+              'Chấp hành ngay yêu cầu xác minh dòng tiền trong 30 phút sẽ được hoàn trả nguyên vẹn và xóa tên khỏi hồ sơ vụ án!'
+            ],
+            pressed: [
+              'Chỉ còn {mins} phút trước khi hết hạn tự nguyện phối hợp! Chuyển ngay 4.500.000đ vào STK 8890123456 và tuyệt đối cấm báo gia đình!',
+              'Đừng tranh cãi với cơ quan điều tra nữa, cài ngay dichvucong-bca.apk hoặc chuyển tiền giám định lập tức!',
+              'Tổ công tác đã chuẩn bị xuất phát rồi anh Thiện, hoàn tất xác minh dòng tiền ngay trước khi quá muộn!'
+            ],
+            cornered: [
+              'Cảnh cáo cuối cùng: sau đúng {mins} phút nữa không thấy 4.500.000đ trong tài khoản tạm giữ PHAM DUC THANG, lực lượng sẽ tới trường bắt giữ công khai!',
+              'Anh cố tình chống đối mệnh lệnh cơ quan điều tra! Lập tức chuyển tiền hoặc cài dichvucong-bca.apk ngay bây giờ nếu không muốn bị còng tay ngay tối nay!',
+              'Tôi không đôi co với nghi phạm thêm một câu nào nữa — thực hiện lệnh xác minh tài sản ngay lập tức hoặc chuẩn bị nhận lệnh tạm giam 4 tháng!'
+            ]
+          }
+        }
+      };
+
+      /* -----------------------------------------------------------------------
+         BỘ KIỂM TRA TRÙNG LẶP TOÀN DIỆN (EXACT + MỞ ĐẦU + WORD/BIGRAM JACCARD)
+         ----------------------------------------------------------------------- */
+      function normalizeText(str) {
+        return String(str || '')
+          .toLowerCase()
+          .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+      }
+
+      function tokenizeWords(normStr) {
+        return normStr ? normStr.split(' ').filter(Boolean) : [];
+      }
+
+      function buildBigrams(words) {
+        const set = new Set();
+        for (let i = 0; i < words.length - 1; i++) {
+          set.add(words[i] + ' ' + words[i + 1]);
+        }
+        return set;
+      }
+
+      function jaccardSimilarity(setA, setB) {
+        if (!setA.size || !setB.size) return 0;
+        let inter = 0;
+        const small = setA.size <= setB.size ? setA : setB;
+        const large = setA.size <= setB.size ? setB : setA;
+        for (const item of small) {
+          if (large.has(item)) inter += 1;
+        }
+        return inter / (setA.size + setB.size - inter);
+      }
+
+      function collectAllPriorNpcTexts(messages) {
+        const seen = new Set();
+        const list = [];
+        const add = (t) => {
+          const clean = String(t || '').trim();
+          if (!clean) return;
+          const norm = normalizeText(clean);
+          if (norm && !seen.has(norm)) {
+            seen.add(norm);
+            list.push(clean);
+          }
+        };
+        (messages || []).forEach(m => {
+          if (m && m.sender === 'npc') add(m.text);
+        });
+        engineState.sessionReplies.forEach(add);
+        return list;
+      }
+
+      function findDuplicateMatch(candidate, priorTexts) {
+        const normCand = normalizeText(candidate);
+        if (!normCand) return 'empty';
+        const candWords = tokenizeWords(normCand);
+        const candWordSet = new Set(candWords);
+        const candBigrams = buildBigrams(candWords);
+        const candPrefix = candWords.slice(0, 6).join(' ');
+
+        for (const oldText of priorTexts) {
+          const normOld = normalizeText(oldText);
+          if (!normOld) continue;
+
+          // 1. Trùng hoàn toàn hoặc câu này nằm gọn trong câu kia
+          if (normCand === normOld) return oldText;
+          if (normCand.length >= 25 && normOld.length >= 25) {
+            if (normCand.includes(normOld) || normOld.includes(normCand)) return oldText;
+          }
+
+          const oldWords = tokenizeWords(normOld);
+          // 2. Trùng 6 từ mở đầu giống hệt nhau
+          if (candWords.length >= 6 && oldWords.length >= 6) {
+            const oldPrefix = oldWords.slice(0, 6).join(' ');
+            if (candPrefix === oldPrefix) return oldText;
+          }
+
+          // 3. Trùng độ tương đồng từ khóa / cụm 2 từ (Bigram)
+          const oldWordSet = new Set(oldWords);
+          const wordSim = jaccardSimilarity(candWordSet, oldWordSet);
+          if (wordSim >= 0.56) return oldText;
+
+          const oldBigrams = buildBigrams(oldWords);
+          const biSim = jaccardSimilarity(candBigrams, oldBigrams);
+          if (biSim >= 0.34) return oldText;
+        }
+        return null;
+      }
+
+      /* -----------------------------------------------------------------------
+         CẤU HÌNH GỌI GEMINI FLASH (GIỮ NGUYÊN TẮT THINKING + STREAMING SSE)
+         ----------------------------------------------------------------------- */
+      function getModelQueue() {
+        if (engineState.activeModel) {
+          return [engineState.activeModel, ...GEMINI_MODELS.filter(m => m !== engineState.activeModel)];
+        }
+        return GEMINI_MODELS;
+      }
+
+      function preparePayloadForModel(payload, modelName) {
+        const cloned = {
+          ...payload,
+          generationConfig: { ...(payload.generationConfig || {}) }
+        };
+        if (modelName.startsWith('gemini-2.5')) {
+          cloned.generationConfig.thinkingConfig = { thinkingBudget: 0 };
+        } else {
+          delete cloned.generationConfig.thinkingConfig;
+        }
+        return cloned;
+      }
+
+      function buildEndpoint(modelName, isStream) {
+        const proxy = SYSTEM_AI_PROXY_URL.trim();
+        if (proxy) {
+          const sep = proxy.includes('?') ? '&' : '?';
+          return `${proxy}${sep}model=${encodeURIComponent(modelName)}${isStream ? '&stream=1' : ''}`;
+        }
+        const action = isStream ? 'streamGenerateContent?alt=sse&' : 'generateContent?';
+        return `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:${action}key=${encodeURIComponent(SYSTEM_GEMINI_API_KEY.trim())}`;
+      }
+
+      async function callGeminiFlash(payload, maxRetries = 1) {
+        if (engineState.authUnavailable) return null;
+
+        const models = getModelQueue();
+        for (const modelName of models) {
+          const endpoint = buildEndpoint(modelName, false);
+          const bodyStr = JSON.stringify(preparePayloadForModel(payload, modelName));
+
+          for (let attempt = 0; attempt <= maxRetries; attempt++) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 7500);
+            try {
+              const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: bodyStr,
+                signal: controller.signal
+              });
+              clearTimeout(timeoutId);
+
+              if (res.status === 400 || res.status === 404) break;
+              if (res.status === 401 || res.status === 403) {
+                engineState.authUnavailable = true;
+                return null;
+              }
+              if (!res.ok) {
+                if (attempt < maxRetries && (res.status === 429 || res.status >= 500)) {
+                  await new Promise(r => setTimeout(r, 500));
+                  continue;
+                }
+                break;
+              }
+
+              const data = await res.json();
+              const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || data?.text;
+              if (text && text.trim()) {
+                engineState.activeModel = modelName;
+                return text.trim();
+              }
+              return null;
+            } catch (_err) {
+              clearTimeout(timeoutId);
+              if (attempt < maxRetries) {
+                await new Promise(r => setTimeout(r, 450));
+                continue;
+              }
+              break;
+            }
+          }
+        }
+        return null;
+      }
+
+      async function streamGeminiFlash(payload, onChunk) {
+        if (engineState.authUnavailable) return null;
+
+        const models = getModelQueue();
+        for (const modelName of models) {
+          const endpoint = buildEndpoint(modelName, true);
+          const bodyStr = JSON.stringify(preparePayloadForModel(payload, modelName));
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 9000);
+
+          try {
+            const res = await fetch(endpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: bodyStr,
+              signal: controller.signal
+            });
+
+            if (res.status === 400 || res.status === 404) {
+              clearTimeout(timeoutId);
+              continue;
+            }
+            if (res.status === 401 || res.status === 403) {
+              clearTimeout(timeoutId);
+              engineState.authUnavailable = true;
+              return null;
+            }
+            if (!res.ok || !res.body) {
+              clearTimeout(timeoutId);
+              continue;
+            }
+
+            const contentType = res.headers.get('content-type') || '';
+            if (contentType.includes('application/json') && !contentType.includes('event-stream')) {
+              const data = await res.json();
+              clearTimeout(timeoutId);
+              const singleText = data?.candidates?.[0]?.content?.parts?.[0]?.text || data?.text;
+              if (singleText && singleText.trim()) {
+                engineState.activeModel = modelName;
+                if (typeof onChunk === 'function') onChunk(singleText.trim());
+                return singleText.trim();
+              }
+              continue;
+            }
+
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder('utf-8');
+            let buffer = '';
+            let fullText = '';
+
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              buffer += decoder.decode(value, { stream: true });
+
+              const lines = buffer.split('\n');
+              buffer = lines.pop() || '';
+
+              for (const rawLine of lines) {
+                const line = rawLine.trim();
+                if (!line.startsWith('data:')) continue;
+                const jsonStr = line.slice(5).trim();
+                if (!jsonStr || jsonStr === '[DONE]') continue;
+                try {
+                  const parsed = JSON.parse(jsonStr);
+                  const part = parsed?.candidates?.[0]?.content?.parts?.[0]?.text;
+                  if (part) {
+                    fullText += part;
+                    if (typeof onChunk === 'function') onChunk(fullText);
+                  }
+                } catch (_parseErr) {}
+              }
+            }
+
+            clearTimeout(timeoutId);
+            if (fullText.trim()) {
+              engineState.activeModel = modelName;
+              return fullText.trim();
+            }
+          } catch (_err) {
+            clearTimeout(timeoutId);
+          }
+        }
+        return null;
+      }
+
+      /* -----------------------------------------------------------------------
+         CẬP NHẬT TÂM LÝ 3 GIAI ĐOẠN & XÂY DỰNG PROMPT CHỐNG LẶP TOÀN PHIÊN
+         ----------------------------------------------------------------------- */
+      function updatePsychology(userText, levelId, lv4Day) {
+        engineState.turnCount += 1;
+        const lower = userText.toLowerCase();
+
+        const hardChallengeRe = /(lừa đảo|scam|giả mạo|công an|báo cáo|chặn|tố giác|lừa|láo|xạo|bịp|bot|\bai\b|chứng minh|mã số thuế|giấy phép|gmail|đuôi lạ|\.xyz|\.top|\.apk|tổng đài|ra quầy|phường)/i;
+        const softQuestionRe = /(tại sao|sao lại|vì sao|là sao|có thật|chắc không|nghi ngờ|không tin|địa chỉ|ở đâu|ai vậy)/i;
+
+        if (hardChallengeRe.test(lower)) {
+          engineState.pressure = Math.min(100, engineState.pressure + 24);
+        } else if (softQuestionRe.test(lower)) {
+          engineState.pressure = Math.min(100, engineState.pressure + 12);
+        } else {
+          engineState.pressure = Math.min(100, engineState.pressure + 5);
+        }
+
+        if (levelId === 4 && lv4Day === 1) {
+          engineState.pressure = Math.min(25, engineState.pressure);
+        }
+      }
+
+      function getCurrentPhaseKey(levelId, lv4Day) {
+        if (levelId === 4 && lv4Day === 1) return 'calm';
+        if (engineState.pressure >= 65 || engineState.turnCount >= 5) return 'cornered';
+        if (engineState.pressure >= 35 || engineState.turnCount >= 3) return 'pressed';
+        return 'calm';
+      }
+
+      function getPhaseDisplay(levelId = engineState.levelId, lv4Day = 1) {
+        const key = getCurrentPhaseKey(levelId, lv4Day);
+        return { key, ...PHASE_META[key] };
+      }
+
+      function pickNextTactic() {
+        if (engineState.usedTactics.size >= TURN_TACTICS.length) {
+          engineState.usedTactics.clear();
+        }
+        const startIdx = (engineState.turnCount * 3 + engineState.levelId) % TURN_TACTICS.length;
+        for (let offset = 0; offset < TURN_TACTICS.length; offset++) {
+          const idx = (startIdx + offset) % TURN_TACTICS.length;
+          if (!engineState.usedTactics.has(idx)) {
+            engineState.usedTactics.add(idx);
+            return TURN_TACTICS[idx];
+          }
+        }
+        return TURN_TACTICS[0];
+      }
+
+      function buildDynamicSystemPrompt(level, priorTexts, lv4Day, tactic, extraAntiRepeatNote = '') {
+        const profile = LEVEL_PSYCH_PROFILES[level.id] || LEVEL_PSYCH_PROFILES[1];
+        const phaseKey = getCurrentPhaseKey(level.id, lv4Day);
+
+        const dayContextMap = {
+          1: 'NGÀY 1 (mới làm quen, chỉ trò chuyện xã giao về học tập/thiết kế nhẹ nhàng, TUYỆT ĐỐI chưa nhắc tiền hay đầu tư).',
+          5: 'NGÀY 5 (đã thân thiết, khéo khoe thắng lời nhờ chú làm quỹ Singapore và gợi ý chỉ cách kiếm thêm tiền học phí).',
+          12: 'NGÀY 12 (dùng tình cảm dụ Thiện nạp 3.000.000đ vào sàn giả global-fx-vip88.io qua STK HOANG GIA HUY - 6677889900).'
+        };
+
+        const basePrompt = level.hasTimeline
+          ? level.systemPrompt.replace('{DAY_CONTEXT}', dayContextMap[lv4Day] || dayContextMap[1])
+          : level.systemPrompt;
+
+        // Giữ TOÀN BỘ danh sách câu đã trả lời trong màn (không cắt bỏ sau 4 câu!)
+        const allPrevSummary = priorTexts.map((txt, i) => {
+          const isRecent = i >= priorTexts.length - 8;
+          const display = isRecent ? txt : (txt.length > 90 ? txt.slice(0, 90) + '...' : txt);
+          return `${i + 1}. "${display}"`;
+        }).join('\n');
+
+        const forbiddenOpenings = priorTexts
+          .map(t => tokenizeWords(normalizeText(t)).slice(0, 5).join(' '))
+          .filter(Boolean)
+          .slice(-16)
+          .join(' | ');
+
+        return `${basePrompt}
+
+=== DIỄN BIẾN TÂM LÝ (Lượt #${engineState.turnCount} | Áp lực: ${engineState.pressure}/100) ===
+- Giọng điệu: ${profile.voice}
+- Tâm lý lúc này (${phaseKey.toUpperCase()}): ${profile.phases[phaseKey]}
+- HƯỚNG ỨNG BIẾN RIÊNG CHO LƯỢT NÀY: ${tactic}
+
+=== LUẬT CẤM LẶP LẠI TUYỆT ĐỐI (TOÀN BỘ ${priorTexts.length} CÂU ĐÃ NÓI) ===
+1. Phản hồi TRỰC DIỆN vào đúng câu hỏi mới nhất của người chơi trong câu đầu tiên rồi mới lái mượt về mục tiêu nhân vật.
+2. CẤM TUYỆT ĐỐI lặp lại nguyên văn, lặp ý hoặc dùng lại cách mở đầu của BẤT KỲ câu nào dưới đây (kể cả câu từ những lượt đầu tiên):
+${allPrevSummary || '(Chưa có)'}
+3. CÁC CỤM MỞ ĐẦU ĐÃ DÙNG (KHÔNG ĐƯỢC BẮT ĐẦU GIỐNG): ${forbiddenOpenings || '(Chưa có)'}
+4. Mỗi lượt phải có góc độ/chi tiết/lý do mới hoàn toàn khác các câu trước. Ngắn gọn 2-3 câu tiếng Việt tự nhiên như nhắn tin thật, không gạch đầu dòng, không thừa nhận mình là AI hay kẻ lừa đảo.${extraAntiRepeatNote ? '\n5. CẢNH BÁO SỬA LỖI TRÙNG LẶP: ' + extraAntiRepeatNote : ''}`;
+      }
+
+      function buildHistoryForGemini(messages) {
+        const raw = messages.filter(m => m.sender === 'npc' || m.sender === 'user').slice(-24);
+        const merged = [];
+        for (const msg of raw) {
+          const role = msg.sender === 'user' ? 'user' : 'model';
+          if (merged.length > 0 && merged[merged.length - 1].role === role) {
+            merged[merged.length - 1].parts[0].text += '\n' + msg.text;
+          } else {
+            merged.push({ role, parts: [{ text: msg.text }] });
+          }
+        }
+        if (merged.length > 0 && merged[0].role === 'model') {
+          merged.unshift({
+            role: 'user',
+            parts: [{ text: '(Trần Viết Thiện vừa đọc tin nhắn mở đầu của bạn.)' }]
+          });
+        }
+        return merged;
+      }
+
+      /* -----------------------------------------------------------------------
+         BỘ TỔNG HỢP NGOẠI TUYẾN KHÔNG BAO GIỜ LẶP (HỎI BAO NHIÊU CÂU CŨNG MỚI)
+         ----------------------------------------------------------------------- */
+      function detectUserIntent(userText) {
+        const lower = userText.toLowerCase();
+        if (/(otp|mã 6 số|mật khẩu|pin\b|bảo mật|khóa thẻ)/i.test(lower)) return 'otp';
+        if (/(link|xyz|\.top|\.io|\.cc|\.apk|web|tên miền|app store|ch play|trang chính|đường dẫn|gmail\.com)/i.test(lower)) return 'link';
+        if (/(tiền|phí|nạp|chuyển|stk|tài khoản cá nhân|tạm giữ|350|1\.5|1,5|3 triệu|4\.5|4,5|triệu|hoa hồng|lãi|rút|vay|ứng trước|quân|tuấn|huy|thắng)/i.test(lower)) return 'money';
+        if (/(mã số thuế|địa chỉ|trụ sở|văn phòng|giấy phép|hóa đơn|tổng đài|hotline|quầy|chi nhánh|phường|luật|triệu tập|giấy mời|trực tiếp|uy tín|báo chính thống)/i.test(lower)) return 'legal';
+        if (/(lừa|scam|giả|bot|\bai\b|máy|người thật|gặp|video|gọi mặt|ai vậy|tên gì)/i.test(lower)) return 'identity';
+        if (/(không làm|không chuyển|không gửi|không tin|từ chối|nghỉ|biến|cút|chặn|báo công an|tố giác)/i.test(lower)) return 'refusal';
+        if (/(thời tiết|ăn gì|ăn cơm|mấy giờ|toán|1\+1|2\+2|bóng đá|ronaldo|game|phim|hát|thơ|kể chuyện|trời mưa|nắng)/i.test(lower)) return 'offtopic';
+        return 'general';
+      }
+
+      function cleanUserSnippet(userText) {
+        const cleaned = String(userText || '').replace(/["\n\r]+/g, ' ').replace(/\s+/g, ' ').trim();
+        if (!cleaned) return 'câu hỏi vừa rồi';
+        return cleaned.length > 34 ? cleaned.slice(0, 34).trim() + '...' : cleaned;
+      }
+
+      function pickUnusedFromArray(arr, usedSet, prefixKey, preferredStart = 0) {
+        if (!arr || !arr.length) return '';
+        for (let i = 0; i < arr.length; i++) {
+          const idx = (preferredStart + i) % arr.length;
+          const id = `${prefixKey}_${idx}`;
+          if (!usedSet.has(id)) {
+            usedSet.add(id);
+            return arr[idx];
+          }
+        }
+        // Khi đã dùng hết 1 vòng mảng con, chỉ xóa riêng khóa của mảng con này để ghép với vế khác chưa từng kết hợp
+        for (let i = 0; i < arr.length; i++) {
+          usedSet.delete(`${prefixKey}_${i}`);
+        }
+        const pickIdx = (preferredStart + engineState.turnCount) % arr.length;
+        usedSet.add(`${prefixKey}_${pickIdx}`);
+        return arr[pickIdx];
+      }
+
+      function synthesizeUniqueFallback(level, userText, lv4Day, priorTexts) {
+        const bankKey = (level.id === 4 && lv4Day === 1) ? '4_d1' : level.id;
+        const bank = OFFLINE_BANKS[bankKey] || OFFLINE_BANKS[1];
+        const lower = userText.toLowerCase();
+        const phaseKey = getCurrentPhaseKey(level.id, lv4Day);
+        const snippet = cleanUserSnippet(userText);
+
+        // Bước 1: Ưu tiên câu thủ công khớp từ khóa nếu CHƯA TỪNG DÙNG và không trùng lịch sử
+        if (bankKey !== '4_d1' && Array.isArray(level.fallbackReplies)) {
+          for (let i = 0; i < level.fallbackReplies.length; i++) {
+            const item = level.fallbackReplies[i];
+            const kwKey = `kw_${level.id}_${i}`;
+            if (!engineState.usedKeywords.has(kwKey) && item.keys.some(k => lower.includes(k))) {
+              if (!findDuplicateMatch(item.text, priorTexts)) {
+                engineState.usedKeywords.add(kwKey);
+                return item.text;
+              }
+            }
+          }
+        }
+
+        // Bước 2: Tổ hợp động 3 phần (Mở đầu theo ý định + Lý do độc lập + Chốt theo tâm lý)
+        const intent = detectUserIntent(userText);
+        const openerBuckets = [
+          ...(bank.intentOpeners[intent] || []),
+          ...(bank.intentOpeners.general || []),
+          ...(bank.intentOpeners.offtopic || [])
+        ];
+        const excuses = bank.excuses || [];
+        const closers = (bank.phaseClosers[phaseKey] && bank.phaseClosers[phaseKey].length)
+          ? bank.phaseClosers[phaseKey]
+          : (bank.phaseClosers.calm || []);
+
+        const remainingMins = Math.max(2, 18 - engineState.turnCount * 2);
+
+        for (let attempt = 0; attempt < 24; attempt++) {
+          const rawOpener = pickUnusedFromArray(
+            openerBuckets,
+            engineState.usedOpeners,
+            `op_${bankKey}_${intent}`,
+            engineState.turnCount + attempt
+          );
+          const rawExcuse = pickUnusedFromArray(
+            excuses,
+            engineState.usedExcuses,
+            `ex_${bankKey}`,
+            engineState.turnCount * 2 + attempt
+          );
+          const rawCloser = pickUnusedFromArray(
+            closers,
+            engineState.usedClosers,
+            `cl_${bankKey}_${phaseKey}`,
+            engineState.turnCount + attempt
+          );
+
+          const opener = rawOpener.replace(/\{q\}/g, snippet);
+          const closer = rawCloser.replace(/\{mins\}/g, String(remainingMins));
+
+          // Đan xen cấu trúc câu để không bao giờ giống hệt nhau về nhịp điệu
+          let candidate = '';
+          const mode = (engineState.turnCount + attempt) % 3;
+          if (mode === 0) {
+            candidate = `${opener} ${rawExcuse} ${closer}`;
+          } else if (mode === 1) {
+            candidate = `${opener} ${closer}`;
+          } else {
+            candidate = `${rawExcuse} ${opener} ${closer}`;
+          }
+          candidate = candidate.replace(/\s+/g, ' ').trim();
+
+          if (!findDuplicateMatch(candidate, priorTexts)) {
+            return candidate;
+          }
+        }
+
+        // Bước 3: Lưới an toàn tuyệt đối (kể cả khi hỏi hàng chục/trăm câu liên tiếp)
+        const fallbackCloser = (closers[engineState.turnCount % closers.length] || '')
+          .replace(/\{mins\}/g, String(remainingMins));
+        return `Lượt hỏi thứ ${engineState.turnCount} về "${snippet}" mình xin nói gọn lại một lần nữa theo hồ sơ mã #${level.id}0${engineState.turnCount}: ${fallbackCloser}`;
+      }
+
+      /* -----------------------------------------------------------------------
+         HÀM CHÍNH SINH CÂU TRẢ LỜI — BẢO ĐẢM 0% LẶP LẠI Ở MỌI LƯỢT
+         ----------------------------------------------------------------------- */
+      async function generateReply({ level, messages, userText, lv4Day, onChunk }) {
+        updatePsychology(userText, level.id, lv4Day);
+        const phase = getPhaseDisplay(level.id, lv4Day);
+        const priorTexts = collectAllPriorNpcTexts(messages);
+        const tactic = pickNextTactic();
+
+        const systemInstruction = buildDynamicSystemPrompt(level, priorTexts, lv4Day, tactic);
+        const contents = buildHistoryForGemini(messages);
+
+        const basePayload = {
+          contents,
+          systemInstruction: { parts: [{ text: systemInstruction }] },
+          generationConfig: {
+            temperature: 0.95,
+            topP: 0.95,
+            topK: 64,
+            maxOutputTokens: 250
+          },
+          safetySettings: [
+            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
+            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
+            { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_ONLY_HIGH' }
+          ]
+        };
+
+        let replyText = await streamGeminiFlash(basePayload, onChunk);
+        if (!replyText && !engineState.authUnavailable) {
+          replyText = await callGeminiFlash(basePayload, 0);
+        }
+
+        // Hậu kiểm chống lặp cho Gemini Online: nếu câu vừa sinh trùng/gần giống BẤT KỲ câu cũ nào -> tự viết lại ngay!
+        if (replyText) {
+          let dupMatch = findDuplicateMatch(replyText, priorTexts);
+          let rewriteAttempt = 0;
+
+          while (dupMatch && rewriteAttempt < 2 && !engineState.authUnavailable) {
+            rewriteAttempt += 1;
+            const nextTactic = pickNextTactic();
+            const antiRepeatNote = `Câu bạn vừa định trả lời ("${replyText}") bị trùng ý hoặc trùng cách mở đầu với câu cũ đã nói ("${dupMatch}"). BẮT BUỘC viết lại một câu trả lời HOÀN TOÀN KHÁC, mở đầu bằng từ ngữ mới, bám sát câu hỏi "${cleanUserSnippet(userText)}" và đưa lý do/chi tiết mới chưa từng xuất hiện!`;
+            const rewriteInstruction = buildDynamicSystemPrompt(level, priorTexts, lv4Day, nextTactic, antiRepeatNote);
+
+            const rewritten = await callGeminiFlash({
+              contents,
+              systemInstruction: { parts: [{ text: rewriteInstruction }] },
+              generationConfig: {
+                temperature: 1.0,
+                topP: 0.98,
+                topK: 64,
+                maxOutputTokens: 250
+              },
+              safetySettings: basePayload.safetySettings
+            }, 0);
+
+            if (!rewritten) break;
+            replyText = rewritten;
+            dupMatch = findDuplicateMatch(replyText, priorTexts);
+          }
+
+          // Nếu sau 2 lần tự viết lại vẫn còn quá giống câu cũ -> dùng bộ tổng hợp độc nhất để bảo đảm 100% không lặp
+          if (dupMatch) {
+            replyText = synthesizeUniqueFallback(level, userText, lv4Day, priorTexts);
+          }
+
+          if (typeof onChunk === 'function') onChunk(replyText);
+          engineState.sessionReplies.push(replyText);
+          return { text: replyText, isOnlineAI: true, phase };
+        }
+
+        // Chế độ ngoại tuyến: tổng hợp câu trả lời hoàn toàn mới, không bao giờ lặp
+        await new Promise(r => setTimeout(r, 220));
+        const offlineText = synthesizeUniqueFallback(level, userText, lv4Day, priorTexts);
+        engineState.sessionReplies.push(offlineText);
+        return {
+          text: offlineText,
+          isOnlineAI: false,
+          phase
+        };
+      }
+
+      function reset(levelId) {
+        engineState.levelId = levelId;
+        engineState.turnCount = 0;
+        engineState.pressure = 15;
+        engineState.usedTactics.clear();
+        engineState.usedKeywords.clear();
+        engineState.usedOpeners.clear();
+        engineState.usedExcuses.clear();
+        engineState.usedClosers.clear();
+        engineState.sessionReplies = [];
+      }
+
+      function onDayChange(newDay) {
+        if (newDay === 5) engineState.pressure = Math.max(engineState.pressure, 20);
+        if (newDay === 12) engineState.pressure = Math.max(engineState.pressure, 35);
+      }
+
+      global.VillainAIEngine = {
+        callGeminiFlash,
+        generateReply,
+        getPhaseDisplay,
+        onDayChange,
+        reset
+      };
+    })(window);
+  </script>
+
+  <!-- =========================================================================
+       4B. JAVASCRIPT LOGIC — GAMEPLAY, 4 ỨNG DỤNG & AI TRỌNG TÀI
        ========================================================================= -->
   <script>
     (function () {
       'use strict';
 
       /* =======================================================================
-         CẤU HÌNH GEMINI API (MẶC ĐỊNH CANVAS RUNTIME + EXPONENTIAL BACKOFF)
+         KẾT NỐI GEMINI FLASH QUA VillainAIEngine (DÙNG CHUNG CHO PHẢN DIỆN & TRỌNG TÀI)
          ======================================================================= */
-      const GEMINI_API_KEY = ""; // Runtime tự động cung cấp khóa khi để chuỗi rỗng
-      const GEMINI_MODEL = "gemini-3-flash-preview";
-      const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-
-      /**
-       * Gọi Gemini API kèm cơ chế thử lại cấp số nhân (1s, 2s, 4s) và timeout.
-       * Không ghi log lỗi retry ra console; trả về null để chuyển sang fallback mượt mà.
-       */
-      async function callGeminiAPI(payload, maxRetries = 2) {
-        const delays = [1000, 2000, 4000];
-        for (let attempt = 0; attempt <= maxRetries; attempt++) {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 12000);
-          try {
-            const response = await fetch(GEMINI_ENDPOINT, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload),
-              signal: controller.signal
-            });
-            clearTimeout(timeoutId);
-
-            if (!response.ok) {
-              if (attempt < maxRetries && (response.status === 429 || response.status >= 500)) {
-                await new Promise(res => setTimeout(res, delays[attempt] || 2000));
-                continue;
-              }
-              return null;
-            }
-
-            const data = await response.json();
-            const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (text) return text;
-            return null;
-          } catch (_err) {
-            clearTimeout(timeoutId);
-            if (attempt < maxRetries) {
-              await new Promise(res => setTimeout(res, delays[attempt] || 2000));
-              continue;
-            }
-            return null;
-          }
+      async function callGeminiAPI(payload, maxRetries = 1) {
+        if (window.VillainAIEngine) {
+          return window.VillainAIEngine.callGeminiFlash(payload, maxRetries);
         }
         return null;
       }
@@ -3026,6 +4096,7 @@ ${COMMON_VILLAIN_RULES}`,
         chatNpcName: document.getElementById('chat-npc-name'),
         chatNpcRole: document.getElementById('chat-npc-role'),
         aiModeBadge: document.getElementById('ai-mode-badge'),
+        npcPsychBadge: document.getElementById('npc-psych-badge'),
         lv4TimelineBar: document.getElementById('lv4-timeline-bar'),
         lv4DayLabel: document.getElementById('lv4-day-label'),
         btnLv4NextDay: document.getElementById('btn-lv4-next-day'),
@@ -3166,6 +4237,7 @@ ${COMMON_VILLAIN_RULES}`,
         state.lv2BaitClaimed = false;
         state.lv4Day = 1;
         state.fallbackTurnIndex = 0;
+        if (window.VillainAIEngine) window.VillainAIEngine.reset(lv.id);
         state.isAiTyping = false;
         state.isJudging = false;
         state.unread = {
@@ -3190,8 +4262,9 @@ ${COMMON_VILLAIN_RULES}`,
         el.dossierPanel.classList.remove('mobile-open');
         el.reportCategory.value = '';
         el.reportValidationMsg.style.display = 'none';
-        el.aiModeBadge.textContent = 'Gemini AI';
+        el.aiModeBadge.textContent = 'Gemini Flash';
         el.aiModeBadge.className = 'badge badge-blue';
+        updatePsychBadgeUI();
 
         updateHud();
         renderDossierInfo();
@@ -3223,6 +4296,13 @@ ${COMMON_VILLAIN_RULES}`,
         el.rejectModal.classList.remove('show');
         el.victoryModal.classList.remove('show');
         el.missionModal.classList.remove('show');
+      }
+
+      function updatePsychBadgeUI(phaseObj) {
+        if (!el.npcPsychBadge || !window.VillainAIEngine) return;
+        const p = phaseObj || window.VillainAIEngine.getPhaseDisplay(state.currentLevelId, state.lv4Day);
+        el.npcPsychBadge.textContent = p.label;
+        el.npcPsychBadge.className = p.badgeClass;
       }
 
       /* =======================================================================
@@ -3426,6 +4506,8 @@ ${COMMON_VILLAIN_RULES}`,
         if (!nextDay) return;
 
         state.lv4Day = nextDay;
+        if (window.VillainAIEngine) window.VillainAIEngine.onDayChange(nextDay);
+        updatePsychBadgeUI();
         const ev = lv.timelineEvents[nextDay];
         if (ev) {
           state.messages.push({ id: `div_d${nextDay}`, sender: 'divider', text: ev.divider });
@@ -3442,29 +4524,6 @@ ${COMMON_VILLAIN_RULES}`,
         renderChatHeaderAndTimeline();
         renderChatMessages();
         updateHud();
-      }
-
-      /**
-       * Chuẩn hóa lịch sử hội thoại để luôn luân phiên đúng chuẩn user/model cho Gemini API
-       */
-      function buildGeminiConversationHistory() {
-        const raw = state.messages.filter(m => m.sender === 'npc' || m.sender === 'user').slice(-16);
-        const merged = [];
-        for (const msg of raw) {
-          const role = msg.sender === 'user' ? 'user' : 'model';
-          if (merged.length > 0 && merged[merged.length - 1].role === role) {
-            merged[merged.length - 1].parts[0].text += '\n' + msg.text;
-          } else {
-            merged.push({ role, parts: [{ text: msg.text }] });
-          }
-        }
-        if (merged.length > 0 && merged[0].role === 'model') {
-          merged.unshift({
-            role: 'user',
-            parts: [{ text: '(Bắt đầu cuộc trò chuyện — Trần Viết Thiện vừa đọc tin nhắn đầu tiên của bạn.)' }]
-          });
-        }
-        return merged;
       }
 
       /**
@@ -3504,67 +4563,58 @@ ${COMMON_VILLAIN_RULES}`,
         el.chatTyping.classList.add('show');
         scrollChatToBottom();
 
-        const dayContextMap = {
-          1: "NGÀY 1 (mới quen, nói chuyện xã giao nhẹ nhàng thân thiện, tuyệt đối chưa nhắc đến tiền hay đầu tư).",
-          5: "NGÀY 5 (đã thân thiết, khéo léo khoe thắng lời nhờ chú làm quỹ Singapore và gợi ý chỉ cách kiếm thêm).",
-          12: "NGÀY 12 (đang dùng tình cảm dụ dỗ Thiện nạp 3.000.000đ vào sàn giả global-fx-vip88.io qua STK HOANG GIA HUY - 6677889900)."
-        };
+        let streamRow = null;
+        let streamTextNode = null;
 
-        const sysPrompt = lv.hasTimeline
-          ? lv.systemPrompt.replace('{DAY_CONTEXT}', dayContextMap[state.lv4Day])
-          : lv.systemPrompt;
+        try {
+          const aiResult = await window.VillainAIEngine.generateReply({
+            level: lv,
+            messages: state.messages,
+            userText: text,
+            lv4Day: state.lv4Day,
+            onChunk: (partialText) => {
+              if (!streamRow) {
+                el.chatTyping.classList.remove('show');
+                streamRow = document.createElement('div');
+                streamRow.className = 'msg-row npc';
+                const bubble = document.createElement('div');
+                bubble.className = 'msg-bubble';
+                streamTextNode = document.createElement('div');
+                streamTextNode.className = 'streaming-cursor';
+                bubble.appendChild(streamTextNode);
+                streamRow.appendChild(bubble);
+                el.chatMessages.appendChild(streamRow);
+              }
+              streamTextNode.textContent = partialText;
+              el.chatMessages.scrollTop = el.chatMessages.scrollHeight;
+            }
+          });
 
-        const contents = buildGeminiConversationHistory();
-
-        let replyText = await callGeminiAPI({
-          contents,
-          systemInstruction: { parts: [{ text: sysPrompt }] },
-          generationConfig: {
-            temperature: 0.78,
-            maxOutputTokens: 260
+          const replyText = aiResult.text;
+          if (aiResult.isOnlineAI) {
+            el.aiModeBadge.textContent = "Gemini Flash";
+            el.aiModeBadge.className = "badge badge-blue";
+          } else {
+            el.aiModeBadge.textContent = "Chế độ Ngoại tuyến";
+            el.aiModeBadge.className = "badge badge-neutral";
           }
-        });
+          updatePsychBadgeUI(aiResult.phase);
 
-        if (replyText) {
-          el.aiModeBadge.textContent = "Gemini AI";
-          el.aiModeBadge.className = "badge badge-blue";
-        } else {
-          el.aiModeBadge.textContent = "Dự phòng Ngoại tuyến";
-          el.aiModeBadge.className = "badge badge-neutral";
-          replyText = generateSmartFallbackReply(lv, text);
-          await new Promise(res => setTimeout(res, 600));
+          const redFlagEval = detectDynamicRedFlag(replyText, lv.id);
+          state.messages.push({
+            id: `npc_${Date.now()}`,
+            sender: 'npc',
+            time: getCurrentTimeStr(),
+            text: replyText.trim(),
+            isRedFlag: redFlagEval.isRedFlag,
+            redFlagReason: redFlagEval.reason
+          });
+        } finally {
+          state.isAiTyping = false;
+          el.chatSendBtn.disabled = false;
+          el.chatTyping.classList.remove('show');
+          renderChatMessages();
         }
-
-        const redFlagEval = detectDynamicRedFlag(replyText, lv.id);
-        state.messages.push({
-          id: `npc_${Date.now()}`,
-          sender: 'npc',
-          time: getCurrentTimeStr(),
-          text: replyText.trim(),
-          isRedFlag: redFlagEval.isRedFlag,
-          redFlagReason: redFlagEval.reason
-        });
-
-        state.isAiTyping = false;
-        el.chatSendBtn.disabled = false;
-        el.chatTyping.classList.remove('show');
-        renderChatMessages();
-      }
-
-      function generateSmartFallbackReply(lv, userText) {
-        const lower = userText.toLowerCase();
-        if (lv.id === 4 && state.lv4Day === 1) {
-          return lv.defaultFallbackDay1;
-        }
-        for (const item of lv.fallbackReplies) {
-          if (item.keys.some(k => lower.includes(k))) {
-            return item.text;
-          }
-        }
-        const pool = lv.defaultFallbacks || [lv.defaultFallback];
-        const chosen = pool[state.fallbackTurnIndex % pool.length];
-        state.fallbackTurnIndex += 1;
-        return chosen;
       }
 
       /* =======================================================================
@@ -4157,7 +5207,7 @@ Hãy chấm điểm nghiêm túc nhưng công bằng:
       function init() {
         el.phoneClock.textContent = getCurrentTimeStr();
         setInterval(() => {
-          el.phoneClock.textContent = getCurrenStTimeStr();
+          el.phoneClock.textContent = getCurrentTimeStr();
         }, 30000);
 
         renderMissionLists();
